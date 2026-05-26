@@ -10,6 +10,7 @@ import { FuelReceipts } from './components/FuelReceipts';
 import { TollReceipts } from './components/TollReceipts';
 import { GeodisPreBilling } from './components/GeodisPreBilling';
 import { Timesheets } from './components/Timesheets';
+import { Reports } from './components/Reports';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -58,6 +59,8 @@ function AppContent() {
         return <GeodisPreBilling />;
       case 'timesheets':
         return <Timesheets />;
+      case 'reports':
+        return <Reports />;
       default:
         return <Dashboard />;
     }

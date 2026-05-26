@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2 } from 'lucide-react';
 
 type LayoutProps = {
   children: ReactNode;
@@ -16,6 +16,7 @@ const navItems = [
   { id: 'fuel', label: 'Fuel Receipts', icon: Fuel },
   { id: 'tolls', label: 'Toll Receipts', icon: Banknote },
   { id: 'hours', label: 'Geodis Pre-Billing', icon: ReceiptText },
+  { id: 'reports', label: 'Reports', icon: BarChart2 },
 ];
 
 export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
