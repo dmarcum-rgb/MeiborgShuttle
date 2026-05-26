@@ -13,6 +13,7 @@ const DRIVERS = [
   'Chris Thomas',
   'Christopher Gober',
   'Clint Greenhouse',
+  'Darryl Thrower',
   'Jaime Cuevas',
   'Mark Andrews',
   'Rigio Albarran',
