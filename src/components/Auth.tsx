@@ -1,27 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 
 const OFFICE_PASSWORD = '2210';
 const DRIVER_PASSWORD = '3814';
-
-const DRIVERS = [
-  'Antonio Cadena',
-  'Armando Luna',
-  'Brandon Hernandez',
-  'Chris Nelson',
-  'Chris Thomas',
-  'Christopher Gober',
-  'Clint Greenhouse',
-  'Darryl Thrower',
-  'Jaime Cuevas',
-  'Mark Andrews',
-  'Rigio Albarran',
-  'Royce Russey',
-  'Shamia Cottrell',
-  'Steve Lawrence',
-  'Other / Not Listed',
-];
 
 function nameToEmail(name: string): string {
   const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -34,7 +17,20 @@ export function Auth() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [drivers, setDrivers] = useState<string[]>([]);
   const { signIn, signUp } = useAuth();
+
+  useEffect(() => {
+    supabase
+      .from('drivers')
+      .select('name')
+      .eq('status', 'active')
+      .order('name')
+      .then(({ data }) => {
+        const names = (data ?? []).map((d) => d.name);
+        setDrivers([...names, 'Other / Not Listed']);
+      });
+  }, []);
 
   const isDriverPassword = password === DRIVER_PASSWORD;
   const isOfficePassword = password === OFFICE_PASSWORD;
@@ -123,7 +119,7 @@ export function Auth() {
 
                   {dropdownOpen && (
                     <div className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-h-64 overflow-y-auto">
-                      {DRIVERS.map((name) => (
+                      {drivers.map((name) => (
                         <button
                           key={name}
                           type="button"
