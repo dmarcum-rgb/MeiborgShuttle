@@ -1,8 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { BarChart2, Clock, DollarSign, TrendingUp, ChevronDown, Download, Fuel, Banknote, MapPin } from 'lucide-react';
+import { BarChart2, Clock, DollarSign, TrendingUp, ChevronDown, Download, Fuel, Banknote, MapPin, Package } from 'lucide-react';
 
 type Period = 'week' | 'month' | 'year' | 'custom';
+
+type HnisLoad = {
+  id: string;
+  driver_name: string;
+  load_number: string;
+  log_date: string;
+  supplier_name: string;
+  supplier_address: string;
+  departure_time_to_supplier: string | null;
+  arrival_time_to_supplier: string | null;
+  departure_time_from_supplier: string | null;
+  arrival_time_to_plant: string | null;
+  tolls_accrued: number | null;
+  notes: string;
+};
 
 type DriverReport = {
   driver_name: string;
@@ -61,7 +76,8 @@ export function Reports() {
   const [period, setPeriod] = useState<Period>('month');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [activeTab, setActiveTab] = useState<'drivers' | 'stops'>('drivers');
+  const [activeTab, setActiveTab] = useState<'drivers' | 'stops' | 'hnis'>('drivers');
+  const [hnisLoads, setHnisLoads] = useState<HnisLoad[]>([]);
   const [driverReports, setDriverReports] = useState<DriverReport[]>([]);
   const [stopReports, setStopReports] = useState<StopReport[]>([]);
   const [loading, setLoading] = useState(false);
@@ -217,6 +233,16 @@ export function Reports() {
     }
 
     setStopReports(Object.values(stopMap));
+
+    // --- HNIS loads ---
+    const { data: hnisData } = await supabase
+      .from('hnis_loads')
+      .select('*')
+      .gte('log_date', from.toISOString().split('T')[0])
+      .lte('log_date', to.toISOString().split('T')[0])
+      .order('log_date', { ascending: false });
+    setHnisLoads(hnisData ?? []);
+
     setLoading(false);
   }, [period, customFrom, customTo]);
 
@@ -253,7 +279,7 @@ export function Reports() {
         ]),
       ];
       download(rows, 'driver_report');
-    } else {
+    } else if (activeTab === 'stops') {
       const rows = [
         ['Stop / Vendor', 'Visits', 'Avg Dwell Time', 'Toll per Visit', 'Est. Revenue'],
         ...sortedStops().map(s => [
@@ -261,6 +287,17 @@ export function Reports() {
         ]),
       ];
       download(rows, 'stop_report');
+    } else {
+      const rows = [
+        ['Driver', 'Load #', 'Date', 'Supplier', 'Supplier Address', 'Depart to Supplier', 'Arrive at Supplier', 'Depart from Supplier', 'Arrive at Plant', 'Tolls', 'Notes'],
+        ...hnisLoads.map(h => [
+          h.driver_name, h.load_number, h.log_date, h.supplier_name, h.supplier_address,
+          h.departure_time_to_supplier ?? '', h.arrival_time_to_supplier ?? '',
+          h.departure_time_from_supplier ?? '', h.arrival_time_to_plant ?? '',
+          h.tolls_accrued != null ? `$${Number(h.tolls_accrued).toFixed(2)}` : '', h.notes,
+        ]),
+      ];
+      download(rows, 'hnis_loads_report');
     }
   }
 
@@ -378,6 +415,18 @@ export function Reports() {
           >
             Stop Profitability
           </button>
+          <button
+            onClick={() => { setActiveTab('hnis'); setSortField('log_date'); }}
+            className={`flex items-center gap-1.5 px-5 py-2 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'hnis' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5" />
+            HNIS Loads
+            {hnisLoads.length > 0 && (
+              <span className="ml-1 text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{hnisLoads.length}</span>
+            )}
+          </button>
         </div>
 
         {/* Table */}
@@ -386,6 +435,52 @@ export function Reports() {
             <div className="flex items-center justify-center py-20">
               <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
             </div>
+          ) : activeTab === 'hnis' ? (
+            <>
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                <Package className="w-5 h-5 text-amber-500" />
+                <h2 className="font-semibold text-gray-800">HNIS Load Logs</h2>
+                <span className="ml-auto text-xs text-gray-400">{hnisLoads.length} load{hnisLoads.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      {[
+                        'Driver', 'Load #', 'Date', 'Supplier', 'Supplier Address',
+                        'Depart → Supplier', 'Arrive at Supplier', 'Depart from Supplier', 'Arrive at Plant', 'Tolls',
+                      ].map(col => (
+                        <th key={col} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left whitespace-nowrap">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {hnisLoads.length === 0 ? (
+                      <tr><td colSpan={10} className="px-6 py-12 text-center text-gray-400">No HNIS loads for this period</td></tr>
+                    ) : hnisLoads.map((h, i) => (
+                      <tr key={h.id} className={`hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                        <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{h.driver_name}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono">{h.load_number || '—'}</td>
+                        <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                          {new Date(h.log_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="px-4 py-3 text-gray-900 font-medium">{h.supplier_name || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate" title={h.supplier_address}>{h.supplier_address || '—'}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono">{h.departure_time_to_supplier ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono">{h.arrival_time_to_supplier ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono">{h.departure_time_from_supplier ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-700 font-mono">{h.arrival_time_to_plant ?? '—'}</td>
+                        <td className="px-4 py-3 text-rose-600 font-medium">
+                          {h.tolls_accrued != null && Number(h.tolls_accrued) > 0 ? `$${Number(h.tolls_accrued).toFixed(2)}` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : activeTab === 'drivers' ? (
             <>
               <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">

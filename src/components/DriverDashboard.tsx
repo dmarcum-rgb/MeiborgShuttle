@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Navigation, ChevronDown, CheckCircle, Loader2, AlertCircle, Clock, LogIn, LogOut, Menu, X as XIcon } from 'lucide-react';
+import { MapPin, Navigation, ChevronDown, CheckCircle, Loader2, AlertCircle, Clock, LogIn, LogOut, Menu, X as XIcon, Package, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { TimesheetSubmission } from './TimesheetSubmission';
@@ -70,7 +70,6 @@ function formatDistance(meters: number): string {
   return `${miles.toFixed(1)} mi`;
 }
 
-// Estimate drive time assuming ~55 mph average highway speed
 function estimateTime(meters: number): string {
   const hours = meters / 1609.344 / 55;
   const totalMins = Math.round(hours * 60);
@@ -82,13 +81,13 @@ function estimateTime(meters: number): string {
 }
 
 type RouteState = 'idle' | 'active' | 'arrived';
-
 type ClockStatus = 'loading' | 'clocked_out' | 'clocked_in';
 
 type ClockBarProps = {
   userId: string | undefined;
   onClockOut: (clockInTime: Date, clockOutTime: Date, completedRoutes: CompletedRoute[]) => void;
   onSignOut: () => void;
+  onStatusChange: (clocked: boolean) => void;
 };
 
 type CompletedRoute = {
@@ -96,8 +95,173 @@ type CompletedRoute = {
   city_address: string;
   arrive_time: string;
   departure_time: string;
+  toll_amount?: number | null;
 };
 
+type HnisForm = {
+  load_number: string;
+  log_date: string;
+  supplier_name: string;
+  supplier_address: string;
+  departure_time_to_supplier: string;
+  arrival_time_to_supplier: string;
+  departure_time_from_supplier: string;
+  arrival_time_to_plant: string;
+  tolls_accrued: string;
+  notes: string;
+};
+
+const BLANK_HNIS: HnisForm = {
+  load_number: '',
+  log_date: new Date().toISOString().split('T')[0],
+  supplier_name: '',
+  supplier_address: '',
+  departure_time_to_supplier: '',
+  arrival_time_to_supplier: '',
+  departure_time_from_supplier: '',
+  arrival_time_to_plant: '',
+  tolls_accrued: '',
+  notes: '',
+};
+
+// ─── HNIS LOAD FORM MODAL ─────────────────────────────────────────────────────
+function HnisModal({
+  driverName,
+  prefillSupplier,
+  onSubmit,
+  onSkip,
+}: {
+  driverName: string;
+  prefillSupplier?: string;
+  onSubmit: (form: HnisForm) => Promise<void>;
+  onSkip: () => void;
+}) {
+  const [form, setForm] = useState<HnisForm>({
+    ...BLANK_HNIS,
+    supplier_name: prefillSupplier ?? '',
+    log_date: new Date().toISOString().split('T')[0],
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (field: keyof HnisForm, value: string) =>
+    setForm(f => ({ ...f, [field]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    await onSubmit(form);
+    setSaving(false);
+  };
+
+  const inputCls = 'w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-800 transition-all';
+  const labelCls = 'block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1';
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl my-6">
+        {/* Header */}
+        <div className="bg-gray-900 rounded-t-2xl px-6 py-5">
+          <div className="flex items-center gap-3">
+            <Package className="w-5 h-5 text-amber-400" />
+            <div>
+              <span className="text-amber-400 text-xs font-semibold uppercase tracking-widest block">HNIS Load Log</span>
+              <h2 className="text-xl font-semibold text-white font-serif">Log This Load</h2>
+            </div>
+          </div>
+          <p className="text-gray-400 text-sm mt-2">Fill out the details for this HNIS load run.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Driver (read-only display) */}
+          <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-0.5">Driver</p>
+            <p className="font-semibold text-gray-900">{driverName}</p>
+          </div>
+
+          {/* Load number + date */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Load # (HNIS)</label>
+              <input className={inputCls} value={form.load_number} placeholder="e.g. 4423"
+                onChange={e => set('load_number', e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Date</label>
+              <input type="date" className={inputCls} value={form.log_date}
+                onChange={e => set('log_date', e.target.value)} />
+            </div>
+          </div>
+
+          {/* Supplier */}
+          <div>
+            <label className={labelCls}>Supplier Name</label>
+            <input className={inputCls} value={form.supplier_name} placeholder="e.g. Northfield Ind."
+              onChange={e => set('supplier_name', e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls}>Supplier Address</label>
+            <input className={inputCls} value={form.supplier_address} placeholder="e.g. 980 Lunt Ave"
+              onChange={e => set('supplier_address', e.target.value)} />
+          </div>
+
+          {/* Times */}
+          <div>
+            <p className={labelCls}>Departure to Supplier</p>
+            <input type="time" className={inputCls} value={form.departure_time_to_supplier}
+              onChange={e => set('departure_time_to_supplier', e.target.value)} />
+          </div>
+          <div>
+            <p className={labelCls}>Arrival at Supplier</p>
+            <input type="time" className={inputCls} value={form.arrival_time_to_supplier}
+              onChange={e => set('arrival_time_to_supplier', e.target.value)} />
+          </div>
+          <div>
+            <p className={labelCls}>Departure from Supplier</p>
+            <input type="time" className={inputCls} value={form.departure_time_from_supplier}
+              onChange={e => set('departure_time_from_supplier', e.target.value)} />
+          </div>
+          <div>
+            <p className={labelCls}>Arrival to Plant</p>
+            <input type="time" className={inputCls} value={form.arrival_time_to_plant}
+              onChange={e => set('arrival_time_to_plant', e.target.value)} />
+          </div>
+
+          {/* Tolls */}
+          <div>
+            <label className={labelCls}>Tolls Accrued ($)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <input type="number" step="0.01" min="0" className={`${inputCls} pl-6`}
+                value={form.tolls_accrued} placeholder="0.00"
+                onChange={e => set('tolls_accrued', e.target.value)} />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className={labelCls}>Notes (optional)</label>
+            <textarea rows={2} className={`${inputCls} resize-none`} value={form.notes}
+              placeholder="Any additional notes..."
+              onChange={e => set('notes', e.target.value)} />
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onSkip}
+              className="flex-1 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all">
+              Skip
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex-1 py-3 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Submit Load'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── CLOCK BAR ────────────────────────────────────────────────────────────────
 function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarProps) {
   const [status, setStatus] = useState<ClockStatus>('loading');
   const [clockInTime, setClockInTime] = useState<Date | null>(null);
@@ -155,7 +319,6 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
         setClockInTime(now);
         onStatusChange(true);
       } else {
-        // Fetch today's completed route logs to pre-fill timesheet stops
         const { data: routes } = await supabase
           .from('route_logs')
           .select('vendor_name, address, started_at, arrived_at, departed_at')
@@ -257,6 +420,13 @@ export function DriverDashboard() {
   const [arrivedVendor, setArrivedVendor] = useState<Vendor | null>(null);
   const [timesheetTrigger, setTimesheetTrigger] = useState<TimesheetTrigger | null>(null);
   const [clockedIn, setClockedIn] = useState<boolean | null>(null);
+  const [driverName, setDriverName] = useState('');
+
+  // HNIS state
+  const [showHnisPrompt, setShowHnisPrompt] = useState(false);
+  const [showHnisForm, setShowHnisForm] = useState(false);
+  const [hnisSubmitting, setHnisSubmitting] = useState(false);
+
   const watchIdRef = useRef<number | null>(null);
   const arrivedRef = useRef(false);
   const routeLogIdRef = useRef<string | null>(null);
@@ -264,6 +434,15 @@ export function DriverDashboard() {
   const selectedVendor = VENDORS.find(v => v.name === selected);
   const isMeiborg = selectedVendor?.address.startsWith('Meiborg') ?? false;
   const hasCoords = !!(selectedVendor?.lat && selectedVendor?.lng);
+
+  // Resolve driver display name for HNIS form
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.rpc('get_driver_names').then(({ data }) => {
+      const match = (data ?? []).find((d: any) => d.driver_id === user.id);
+      if (match?.display_name) setDriverName(match.display_name);
+    });
+  }, [user?.id]);
 
   const stopWatching = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -330,8 +509,12 @@ export function DriverDashboard() {
     if (hasCoords && !isMeiborg) startGeofence(selectedVendor, data.id);
   };
 
-  const handleNextRoute = async () => {
-    // Record departure time before moving to next route
+  // When driver taps "Select Next Route" from arrived screen — show HNIS prompt first
+  const handleNextRouteIntent = () => {
+    setShowHnisPrompt(true);
+  };
+
+  const proceedToNextRoute = async () => {
     if (routeLogIdRef.current) {
       await supabase
         .from('route_logs')
@@ -346,6 +529,29 @@ export function DriverDashboard() {
     setArrivedVendor(null);
     arrivedRef.current = false;
     routeLogIdRef.current = null;
+    setShowHnisPrompt(false);
+    setShowHnisForm(false);
+  };
+
+  const handleHnisSubmit = async (form: HnisForm) => {
+    if (!user) return;
+    setHnisSubmitting(true);
+    await supabase.from('hnis_loads').insert({
+      driver_id: user.id,
+      driver_name: driverName,
+      load_number: form.load_number.trim(),
+      log_date: form.log_date,
+      supplier_name: form.supplier_name.trim(),
+      supplier_address: form.supplier_address.trim(),
+      departure_time_to_supplier: form.departure_time_to_supplier || null,
+      arrival_time_to_supplier: form.arrival_time_to_supplier || null,
+      departure_time_from_supplier: form.departure_time_from_supplier || null,
+      arrival_time_to_plant: form.arrival_time_to_plant || null,
+      tolls_accrued: form.tolls_accrued ? parseFloat(form.tolls_accrued) : null,
+      notes: form.notes.trim(),
+    });
+    setHnisSubmitting(false);
+    await proceedToNextRoute();
   };
 
   const handleClockOut = (clockInTime: Date, clockOutTime: Date, completedRoutes: CompletedRoute[]) => {
@@ -376,6 +582,49 @@ export function DriverDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 pt-14">
         <ClockBar userId={user?.id} onClockOut={handleClockOut} onSignOut={handleSignOut} onStatusChange={setClockedIn} />
+
+        {/* HNIS prompt overlay */}
+        {showHnisPrompt && !showHnisForm && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+              <div className="bg-gray-900 px-6 py-5 flex items-center gap-3">
+                <Package className="w-5 h-5 text-amber-400" />
+                <div>
+                  <span className="text-amber-400 text-xs font-semibold uppercase tracking-widest block">HNIS Load</span>
+                  <h2 className="text-lg font-semibold text-white font-serif">Log a HNIS Load?</h2>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-gray-600 text-sm">Do you need to log a HNIS Load for this stop?</p>
+                <button
+                  onClick={() => { setShowHnisPrompt(false); setShowHnisForm(true); }}
+                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  Yes, Log a HNIS Load
+                </button>
+                <button
+                  onClick={proceedToNextRoute}
+                  className="w-full py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  No, Continue to Next Route
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* HNIS form modal */}
+        {showHnisForm && (
+          <HnisModal
+            driverName={driverName}
+            prefillSupplier={arrivedVendor.name}
+            onSubmit={handleHnisSubmit}
+            onSkip={proceedToNextRoute}
+          />
+        )}
+
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px)] p-6">
           <div className="w-full max-w-lg">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -401,7 +650,7 @@ export function DriverDashboard() {
                   </div>
                 )}
                 <button
-                  onClick={handleNextRoute}
+                  onClick={handleNextRouteIntent}
                   className="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all text-lg tracking-wide flex items-center justify-center gap-2"
                 >
                   <Navigation className="w-5 h-5" />
@@ -498,7 +747,7 @@ export function DriverDashboard() {
                 </button>
 
                 <button
-                  onClick={handleNextRoute}
+                  onClick={handleNextRouteIntent}
                   className="w-full py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-all"
                 >
                   Select Different Route
@@ -507,6 +756,46 @@ export function DriverDashboard() {
             </div>
           </div>
         </div>
+
+        {/* HNIS prompt for "Select Different Route" */}
+        {showHnisPrompt && !showHnisForm && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+              <div className="bg-gray-900 px-6 py-5 flex items-center gap-3">
+                <Package className="w-5 h-5 text-amber-400" />
+                <div>
+                  <span className="text-amber-400 text-xs font-semibold uppercase tracking-widest block">HNIS Load</span>
+                  <h2 className="text-lg font-semibold text-white font-serif">Log a HNIS Load?</h2>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-gray-600 text-sm">Do you need to log a HNIS Load for this stop?</p>
+                <button
+                  onClick={() => { setShowHnisPrompt(false); setShowHnisForm(true); }}
+                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  Yes, Log a HNIS Load
+                </button>
+                <button
+                  onClick={proceedToNextRoute}
+                  className="w-full py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  No, Continue to Next Route
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showHnisForm && (
+          <HnisModal
+            driverName={driverName}
+            prefillSupplier={selectedVendor.name}
+            onSubmit={handleHnisSubmit}
+            onSkip={proceedToNextRoute}
+          />
+        )}
       </div>
     );
   }
