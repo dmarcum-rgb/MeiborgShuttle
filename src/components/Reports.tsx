@@ -119,28 +119,14 @@ export function Reports() {
       driverMap[name].total_tolls += Number(ts.toll_total ?? 0);
     }
 
-    // Map auth user id → display name: prefer driver_profiles, fall back to deriving from email
+    // Map auth user id → display name via SECURITY DEFINER function (sees all drivers)
     const driverIdToName: Record<string, string> = {};
-
-    function nameFromEmail(email: string): string {
-      const match = email.match(/^driver-(.+)@meiborg\.local$/);
-      if (!match) return '';
-      return match[1].split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    }
-
-    const [profilesRes, authEmailsRes] = await Promise.all([
-      supabase.from('driver_profiles').select('driver_id, full_name'),
-      supabase.from('driver_auth_emails').select('id, email'),
-    ]);
-
-    // Seed from email derivation first (fallback for drivers with no profile yet)
-    for (const u of authEmailsRes.data ?? []) {
-      const derived = nameFromEmail(u.email ?? '');
-      if (derived) driverIdToName[u.id] = derived;
-    }
-    // Override with saved profile names (more accurate, e.g. "Rigoberto M. Albarran Jr")
-    for (const p of profilesRes.data ?? []) {
-      if (p.full_name) driverIdToName[p.driver_id] = p.full_name;
+    const { data: driverNames } = await supabase.rpc('get_driver_names');
+    for (const d of driverNames ?? []) {
+      // Skip test/junk accounts (numeric-only names)
+      if (d.display_name && !/^\d+$/.test(d.display_name)) {
+        driverIdToName[d.driver_id] = d.display_name;
+      }
     }
 
     for (const f of fuelRecs) {

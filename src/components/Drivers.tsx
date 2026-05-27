@@ -29,30 +29,43 @@ export function Drivers() {
   const fetchDrivers = async () => {
     setLoading(true);
 
-    function nameFromEmail(email: string): string {
-      const match = email.match(/^driver-(.+)@meiborg\.local$/);
-      if (!match) return '';
-      return match[1].split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    }
-
-    const [driversRes, clockRes, profilesRes, authEmailsRes, stopsRes] = await Promise.all([
+    const [driversRes, clockRes, driverNamesRes, stopsRes] = await Promise.all([
       supabase.from('drivers').select('*').order('created_at', { ascending: false }),
       supabase.from('clock_events').select('driver_id, type, timestamp').order('timestamp', { ascending: false }),
-      supabase.from('driver_profiles').select('driver_id, full_name'),
-      supabase.from('driver_auth_emails').select('id, email'),
+      supabase.rpc('get_driver_names'),
       supabase.from('route_logs').select('driver_id'),
     ]);
 
     setDrivers(driversRes.data || []);
 
-    // Build a map of auth user id → full_name (email derivation as fallback)
+    // Map auth user id → display name via SECURITY DEFINER function (sees all drivers)
     const idToName: Record<string, string> = {};
-    for (const u of authEmailsRes.data ?? []) {
-      const derived = nameFromEmail(u.email ?? '');
-      if (derived) idToName[u.id] = derived;
+    for (const d of driverNamesRes.data ?? []) {
+      if (d.display_name && !/^\d+$/.test(d.display_name)) {
+        idToName[d.driver_id] = d.display_name;
+      }
     }
-    for (const p of profilesRes.data ?? []) {
-      if (p.full_name) idToName[p.driver_id] = p.full_name;
+
+    // Build normalized name → auth display_name map for fuzzy matching against drivers table
+    // Normalization: lowercase first word (first name) for partial matching
+    const normalize = (n: string) => n.toLowerCase().split(' ')[0];
+    const normalizedToDisplayName: Record<string, string> = {};
+    for (const displayName of Object.values(idToName)) {
+      normalizedToDisplayName[normalize(displayName)] = displayName;
+    }
+
+    // For each drivers-table driver, find the best matching auth display name
+    const driverTableToAuthName: Record<string, string> = {};
+    for (const d of driversRes.data ?? []) {
+      const key = normalize(d.name);
+      // Exact match first
+      const exactMatch = Object.values(idToName).find(n => n.toLowerCase() === d.name.toLowerCase());
+      if (exactMatch) {
+        driverTableToAuthName[d.name] = exactMatch;
+      } else if (normalizedToDisplayName[key]) {
+        // First-name match fallback
+        driverTableToAuthName[d.name] = normalizedToDisplayName[key];
+      }
     }
 
     // For each auth user, find their latest clock event — clocked in if it's 'clock_in'
@@ -60,19 +73,28 @@ export function Drivers() {
     for (const e of clockRes.data ?? []) {
       if (!latestByDriver[e.driver_id]) latestByDriver[e.driver_id] = e.type;
     }
-    const activeDriveNames = new Set<string>();
+    // Build set of auth display names currently clocked in
+    const activeAuthNames = new Set<string>();
     for (const [driverId, type] of Object.entries(latestByDriver)) {
       if (type === 'clock_in' && idToName[driverId]) {
-        activeDriveNames.add(idToName[driverId]);
+        activeAuthNames.add(idToName[driverId]);
       }
+    }
+    // Map back to drivers-table names
+    const activeDriveNames = new Set<string>();
+    for (const [driverTableName, authName] of Object.entries(driverTableToAuthName)) {
+      if (activeAuthNames.has(authName)) activeDriveNames.add(driverTableName);
     }
     setClockedInNames(activeDriveNames);
 
-    // Count total stops per driver name (from route_logs via auth user id → name)
+    // Count total stops per drivers-table driver name
     const counts: Record<string, number> = {};
     for (const log of stopsRes.data ?? []) {
-      const name = idToName[log.driver_id];
-      if (name) counts[name] = (counts[name] ?? 0) + 1;
+      const authName = idToName[log.driver_id];
+      if (!authName) continue;
+      // Find which drivers-table driver this auth name maps to
+      const driverTableName = Object.entries(driverTableToAuthName).find(([, v]) => v === authName)?.[0];
+      if (driverTableName) counts[driverTableName] = (counts[driverTableName] ?? 0) + 1;
     }
     setStopCounts(counts);
 
