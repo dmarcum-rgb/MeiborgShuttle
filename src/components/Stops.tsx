@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit2, Trash2, X, MapPin, Loader2, ToggleLeft, ToggleRight, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, MapPin, Loader2, ToggleLeft, ToggleRight, Search, AlertTriangle } from 'lucide-react';
 
 type VendorStop = {
   id: string;
@@ -124,6 +124,7 @@ export function Stops() {
   );
 
   const activeCount = stops.filter(s => s.active).length;
+  const missingGeofence = stops.filter(s => s.active && (s.lat == null || s.lng == null)).length;
 
   return (
     <div className="p-6 space-y-6">
@@ -143,6 +144,14 @@ export function Stops() {
           Add Stop
         </button>
       </div>
+
+      {/* Missing geofence banner */}
+      {missingGeofence > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <span><span className="font-semibold">{missingGeofence} active stop{missingGeofence !== 1 ? 's' : ''}</span> missing geofence coordinates — drivers won't be able to auto-log arrivals at these locations.</span>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative max-w-sm">
@@ -188,6 +197,11 @@ export function Stops() {
                     {stop.toll_amount != null && stop.toll_amount > 0 && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 font-medium">
                         ${Number(stop.toll_amount).toFixed(2)} toll
+                      </span>
+                    )}
+                    {stop.active && (stop.lat == null || stop.lng == null) && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-200">
+                        <AlertTriangle className="w-3 h-3" /> No geofence
                       </span>
                     )}
                   </div>
