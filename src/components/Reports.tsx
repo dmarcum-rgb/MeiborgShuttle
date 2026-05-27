@@ -77,7 +77,7 @@ export function Reports() {
     const fromISO = from.toISOString();
     const toISO = to.toISOString();
 
-    const [routeLogsRes, timesheetsRes, fuelRes, tollReceiptsRes] = await Promise.all([
+    const [routeLogsRes, timesheetsRes, fuelRes, tollReceiptsRes, driverNamesRes] = await Promise.all([
       supabase
         .from('route_logs')
         .select('driver_id, vendor_name, started_at, arrived_at, departed_at')
@@ -99,6 +99,7 @@ export function Reports() {
         .select('driver_id, amount, date')
         .gte('date', from.toISOString().split('T')[0])
         .lte('date', to.toISOString().split('T')[0]),
+      supabase.rpc('get_driver_names'),
     ]);
 
     const logs = routeLogsRes.data ?? [];
@@ -121,9 +122,7 @@ export function Reports() {
 
     // Map auth user id → display name via SECURITY DEFINER function (sees all drivers)
     const driverIdToName: Record<string, string> = {};
-    const { data: driverNames } = await supabase.rpc('get_driver_names');
-    for (const d of driverNames ?? []) {
-      // Skip test/junk accounts (numeric-only names)
+    for (const d of driverNamesRes.data ?? []) {
       if (d.display_name && !/^\d+$/.test(d.display_name)) {
         driverIdToName[d.driver_id] = d.display_name;
       }
@@ -154,7 +153,8 @@ export function Reports() {
     }
 
     for (const [driverId, driverLogs] of Object.entries(byDriver)) {
-      const name = driverIdToName[driverId] ?? driverId;
+      const name = driverIdToName[driverId];
+      if (!name) continue;
       if (!driverMap[name]) driverMap[name] = { driver_name: name, total_stops: 0, avg_stop_duration_min: 0, avg_travel_time_min: 0, total_fuel: 0, total_tolls: 0, total_hours: 0 };
       driverMap[name].total_stops += driverLogs.length;
 
