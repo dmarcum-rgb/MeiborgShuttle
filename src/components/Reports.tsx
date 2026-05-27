@@ -119,10 +119,10 @@ export function Reports() {
       driverMap[name].total_tolls += Number(ts.toll_total ?? 0);
     }
 
-    // Aggregate fuel receipts by driver_id (uuid) — need drivers table to map
+    // Map auth user id → display name via driver_profiles (set by drivers at first login)
     const driverIdToName: Record<string, string> = {};
-    const { data: driversData } = await supabase.from('drivers').select('id, name');
-    for (const d of driversData ?? []) driverIdToName[d.id] = d.name;
+    const { data: profilesData } = await supabase.from('driver_profiles').select('driver_id, full_name');
+    for (const p of profilesData ?? []) driverIdToName[p.driver_id] = p.full_name;
 
     for (const f of fuelRecs) {
       const name = driverIdToName[f.driver_id];
@@ -416,7 +416,12 @@ export function Reports() {
                       <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400">No data for this period</td></tr>
                     ) : sortedDrivers().map((d, i) => (
                       <tr key={d.driver_name} className={`hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{d.driver_name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{d.driver_name}</span>
+                            <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{d.total_stops}</span>
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-right text-gray-700">{d.total_stops}</td>
                         <td className="px-6 py-4 text-right text-gray-700">{fmt(d.avg_stop_duration_min)}</td>
                         <td className="px-6 py-4 text-right text-gray-700">{fmt(d.avg_travel_time_min)}</td>

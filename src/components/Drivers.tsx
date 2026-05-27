@@ -10,6 +10,8 @@ type DriverFormData = {
 
 export function Drivers() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [clockedInNames, setClockedInNames] = useState<Set<string>>(new Set());
+  const [stopCounts, setStopCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
@@ -26,8 +28,42 @@ export function Drivers() {
 
   const fetchDrivers = async () => {
     setLoading(true);
-    const { data } = await supabase.from('drivers').select('*').order('created_at', { ascending: false });
-    setDrivers(data || []);
+
+    const [driversRes, clockRes, profilesRes, stopsRes] = await Promise.all([
+      supabase.from('drivers').select('*').order('created_at', { ascending: false }),
+      // Get latest clock event per driver to determine who is currently clocked in
+      supabase.from('clock_events').select('driver_id, type, timestamp').order('timestamp', { ascending: false }),
+      supabase.from('driver_profiles').select('driver_id, full_name'),
+      supabase.from('route_logs').select('driver_id'),
+    ]);
+
+    setDrivers(driversRes.data || []);
+
+    // Build a map of auth user id → full_name
+    const idToName: Record<string, string> = {};
+    for (const p of profilesRes.data ?? []) idToName[p.driver_id] = p.full_name;
+
+    // For each auth user, find their latest clock event — clocked in if it's 'clock_in'
+    const latestByDriver: Record<string, string> = {};
+    for (const e of clockRes.data ?? []) {
+      if (!latestByDriver[e.driver_id]) latestByDriver[e.driver_id] = e.type;
+    }
+    const activeDriveNames = new Set<string>();
+    for (const [driverId, type] of Object.entries(latestByDriver)) {
+      if (type === 'clock_in' && idToName[driverId]) {
+        activeDriveNames.add(idToName[driverId]);
+      }
+    }
+    setClockedInNames(activeDriveNames);
+
+    // Count total stops per driver name (from route_logs via auth user id → name)
+    const counts: Record<string, number> = {};
+    for (const log of stopsRes.data ?? []) {
+      const name = idToName[log.driver_id];
+      if (name) counts[name] = (counts[name] ?? 0) + 1;
+    }
+    setStopCounts(counts);
+
     setLoading(false);
   };
 
@@ -129,18 +165,25 @@ export function Drivers() {
               </div>
               <span
                 className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  driver.status === 'active'
+                  clockedInNames.has(driver.name)
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-slate-500/20 text-slate-400'
                 }`}
               >
-                {driver.status}
+                {clockedInNames.has(driver.name) ? 'active' : 'inactive'}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-slate-400 mb-4">
-              <Truck className="w-4 h-4" />
-              <span className="text-sm">Truck #{driver.truck_number}</span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Truck className="w-4 h-4" />
+                <span className="text-sm">Truck #{driver.truck_number}</span>
+              </div>
+              {(stopCounts[driver.name] ?? 0) > 0 && (
+                <span className="text-xs text-slate-400">
+                  <span className="font-semibold text-white">{stopCounts[driver.name]}</span> stops
+                </span>
+              )}
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-700">
