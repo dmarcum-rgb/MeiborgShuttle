@@ -29,19 +29,31 @@ export function Drivers() {
   const fetchDrivers = async () => {
     setLoading(true);
 
-    const [driversRes, clockRes, profilesRes, stopsRes] = await Promise.all([
+    function nameFromEmail(email: string): string {
+      const match = email.match(/^driver-(.+)@meiborg\.local$/);
+      if (!match) return '';
+      return match[1].split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    const [driversRes, clockRes, profilesRes, authEmailsRes, stopsRes] = await Promise.all([
       supabase.from('drivers').select('*').order('created_at', { ascending: false }),
-      // Get latest clock event per driver to determine who is currently clocked in
       supabase.from('clock_events').select('driver_id, type, timestamp').order('timestamp', { ascending: false }),
       supabase.from('driver_profiles').select('driver_id, full_name'),
+      supabase.from('driver_auth_emails').select('id, email'),
       supabase.from('route_logs').select('driver_id'),
     ]);
 
     setDrivers(driversRes.data || []);
 
-    // Build a map of auth user id → full_name
+    // Build a map of auth user id → full_name (email derivation as fallback)
     const idToName: Record<string, string> = {};
-    for (const p of profilesRes.data ?? []) idToName[p.driver_id] = p.full_name;
+    for (const u of authEmailsRes.data ?? []) {
+      const derived = nameFromEmail(u.email ?? '');
+      if (derived) idToName[u.id] = derived;
+    }
+    for (const p of profilesRes.data ?? []) {
+      if (p.full_name) idToName[p.driver_id] = p.full_name;
+    }
 
     // For each auth user, find their latest clock event — clocked in if it's 'clock_in'
     const latestByDriver: Record<string, string> = {};

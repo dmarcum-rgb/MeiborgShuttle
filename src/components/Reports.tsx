@@ -119,10 +119,29 @@ export function Reports() {
       driverMap[name].total_tolls += Number(ts.toll_total ?? 0);
     }
 
-    // Map auth user id → display name via driver_profiles (set by drivers at first login)
+    // Map auth user id → display name: prefer driver_profiles, fall back to deriving from email
     const driverIdToName: Record<string, string> = {};
-    const { data: profilesData } = await supabase.from('driver_profiles').select('driver_id, full_name');
-    for (const p of profilesData ?? []) driverIdToName[p.driver_id] = p.full_name;
+
+    function nameFromEmail(email: string): string {
+      const match = email.match(/^driver-(.+)@meiborg\.local$/);
+      if (!match) return '';
+      return match[1].split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    const [profilesRes, authEmailsRes] = await Promise.all([
+      supabase.from('driver_profiles').select('driver_id, full_name'),
+      supabase.from('driver_auth_emails').select('id, email'),
+    ]);
+
+    // Seed from email derivation first (fallback for drivers with no profile yet)
+    for (const u of authEmailsRes.data ?? []) {
+      const derived = nameFromEmail(u.email ?? '');
+      if (derived) driverIdToName[u.id] = derived;
+    }
+    // Override with saved profile names (more accurate, e.g. "Rigoberto M. Albarran Jr")
+    for (const p of profilesRes.data ?? []) {
+      if (p.full_name) driverIdToName[p.driver_id] = p.full_name;
+    }
 
     for (const f of fuelRecs) {
       const name = driverIdToName[f.driver_id];
