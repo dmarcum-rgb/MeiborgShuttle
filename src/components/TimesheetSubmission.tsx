@@ -484,13 +484,13 @@ export function TimesheetSubmission({ clockInTime, clockOutTime, workDate, prefi
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">Arrive Time</label>
-                          <input type="time" value={stop.arrive_time} onChange={e => updateStop(i, 'arrive_time', e.target.value)}
+                          <label className="block text-xs text-gray-500 mb-1">Departure Time</label>
+                          <input type="time" value={stop.departure_time} onChange={e => updateStop(i, 'departure_time', e.target.value)}
                             className="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 text-sm" />
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">Departure Time</label>
-                          <input type="time" value={stop.departure_time} onChange={e => updateStop(i, 'departure_time', e.target.value)}
+                          <label className="block text-xs text-gray-500 mb-1">Arrive Time</label>
+                          <input type="time" value={stop.arrive_time} onChange={e => updateStop(i, 'arrive_time', e.target.value)}
                             className="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 text-sm" />
                         </div>
                       </div>

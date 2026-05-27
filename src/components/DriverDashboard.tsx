@@ -158,7 +158,7 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
         // Fetch today's completed route logs to pre-fill timesheet stops
         const { data: routes } = await supabase
           .from('route_logs')
-          .select('vendor_name, address, started_at, arrived_at')
+          .select('vendor_name, address, started_at, arrived_at, departed_at')
           .eq('driver_id', userId)
           .gte('started_at', clockInTime!.toISOString())
           .not('arrived_at', 'is', null)
@@ -170,7 +170,7 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
             vendor_name: r.vendor_name,
             city_address: r.address,
             arrive_time: r.arrived_at ? new Date(r.arrived_at).toTimeString().slice(0, 5) : '',
-            departure_time: '',
+            departure_time: r.departed_at ? new Date(r.departed_at).toTimeString().slice(0, 5) : '',
             toll_amount: vendor?.toll ?? null,
           };
         });
@@ -330,7 +330,14 @@ export function DriverDashboard() {
     if (hasCoords && !isMeiborg) startGeofence(selectedVendor, data.id);
   };
 
-  const handleNextRoute = () => {
+  const handleNextRoute = async () => {
+    // Record departure time before moving to next route
+    if (routeLogIdRef.current) {
+      await supabase
+        .from('route_logs')
+        .update({ departed_at: new Date().toISOString() })
+        .eq('id', routeLogIdRef.current);
+    }
     stopWatching();
     setSelected('');
     setRouteState('idle');
