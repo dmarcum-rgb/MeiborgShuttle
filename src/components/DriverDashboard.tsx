@@ -29,7 +29,8 @@ const VENDORS: Vendor[] = [
   { name: 'Equipment Depot - Rockford', address: '4414 11th Street, Rockford, IL 61109', toll: null, lat: 42.2127933, lng: -89.0723229 },
   { name: 'Fairchild Ind.', address: '475 Capital Drive, Lake Zurich, IL 60047', toll: null, lat: 42.2064137, lng: -88.0650475 },
   { name: 'Friedman (Flatbed)', address: '4303 Kenedy Ave. East Chicago, IN 46312', toll: 115.95, lat: 41.6386198, lng: -87.4616017 },
-  { name: 'Grammer', address: 'Meiborg/Opps. LOAD', toll: null },
+  { name: 'Grammer', address: '24806 State Route 697, Delphos, OH 45833', toll: null },
+  { name: 'Meiborg Shop, 11th', address: '3814 11th St, Rockford, IL 61109', toll: null, lat: 42.2147725, lng: -89.0720146 },
   { name: 'Kapco Inc. (3am from Rockford)', address: '1150 Cheyenne Ave. Grafton, WI 53024', toll: 19.35, note: 'Drop & Hook', lat: 43.3193221, lng: -87.9350483 },
   { name: 'Kuriyama Of America Inc.', address: '14200 Commerce Court, Huntley, IL 60142', toll: 6.40, lat: 42.1243796, lng: -88.4262014 },
   { name: 'L.J. Fab.', address: '944 Research Pkwy. Rockford, IL 61109', toll: null, lat: 42.2183322, lng: -89.0830221 },
@@ -49,6 +50,8 @@ const VENDORS: Vendor[] = [
   { name: 'PMW, Shhhhhh', address: '1005 McKinley Ave. Belvidere, IL 61008', toll: null, lat: 42.2705504, lng: -88.8414257 },
   { name: 'Timber Creek (Wedges)', address: '128 Badger St. Walworth, WI 53184', toll: null, lat: 42.5381975, lng: -88.5982851 },
   { name: 'UCA Marengo', address: '240 N. Prospect Ave. Marengo, IL 60152', toll: null, lat: 42.2501490, lng: -88.6081303 },
+  { name: 'UCA Plant #2 201', address: '201 N Prospect St, Marengo, IL 60152', toll: null, lat: 42.2525117, lng: -88.5961920 },
+  { name: 'UCA Plant #3 (Geodis)', address: '19720 E Grant Hwy, Marengo, IL 60152', toll: null, lat: 42.2403008, lng: -88.5879921 },
   { name: 'Value Added', address: '1595 Northrock Ct. Rockford, IL 61103', toll: null, lat: 42.3351396, lng: -89.0700624 },
 ];
 
