@@ -11,6 +11,9 @@ type DriverFormData = {
 export function Drivers() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [clockedInNames, setClockedInNames] = useState<Set<string>>(new Set());
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+  // Maps auth user_id → drivers-table name, built during fetchDrivers
+  const [userIdToDriverName, setUserIdToDriverName] = useState<Record<string, string>>({});
   const [stopCounts, setStopCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -24,6 +27,21 @@ export function Drivers() {
 
   useEffect(() => {
     fetchDrivers();
+  }, []);
+
+  // Subscribe to driver presence channel to show who has the app open
+  useEffect(() => {
+    const channel = supabase.channel('driver_presence');
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{ user_id: string }>();
+        const ids = new Set(
+          Object.values(state).flatMap(presences => presences.map(p => p.user_id))
+        );
+        setOnlineUserIds(ids);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchDrivers = async () => {
@@ -86,6 +104,14 @@ export function Drivers() {
       if (activeAuthNames.has(authName)) activeDriveNames.add(driverTableName);
     }
     setClockedInNames(activeDriveNames);
+
+    // Build auth user_id → drivers-table name for presence lookups
+    const uidToName: Record<string, string> = {};
+    for (const [uid, authName] of Object.entries(idToName)) {
+      const driverTableName = Object.entries(driverTableToAuthName).find(([, v]) => v === authName)?.[0];
+      if (driverTableName) uidToName[uid] = driverTableName;
+    }
+    setUserIdToDriverName(uidToName);
 
     // Count total stops per drivers-table driver name
     const counts: Record<string, number> = {};
@@ -197,15 +223,17 @@ export function Drivers() {
                   <p className="text-slate-400 text-sm">Driver</p>
                 </div>
               </div>
-              <span
-                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  clockedInNames.has(driver.name)
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-slate-500/20 text-slate-400'
-                }`}
-              >
-                {clockedInNames.has(driver.name) ? 'active' : 'inactive'}
-              </span>
+              {(() => {
+                const isOnline = [...onlineUserIds].some(uid => userIdToDriverName[uid] === driver.name);
+                return (
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                    isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                    {isOnline ? 'online' : 'offline'}
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="flex items-center justify-between mb-4">

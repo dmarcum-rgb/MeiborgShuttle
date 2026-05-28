@@ -454,6 +454,20 @@ export function DriverDashboard() {
     });
   }, [user?.id]);
 
+  // Broadcast presence so the office can see who's online
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase.channel('driver_presence', {
+      config: { presence: { key: user.id } },
+    });
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+      }
+    });
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
   // Fetch toll data when idle
   useEffect(() => {
     if (!user?.id || routeState !== 'idle') return;
