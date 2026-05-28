@@ -29,7 +29,7 @@ const VENDORS: Vendor[] = [
   { name: 'Equipment Depot - Rockford', address: '4414 11th Street, Rockford, IL 61109', toll: null, lat: 42.2127933, lng: -89.0723229 },
   { name: 'Fairchild Ind.', address: '475 Capital Drive, Lake Zurich, IL 60047', toll: null, lat: 42.2064137, lng: -88.0650475 },
   { name: 'Friedman (Flatbed)', address: '4303 Kenedy Ave. East Chicago, IN 46312', toll: 115.95, lat: 41.6386198, lng: -87.4616017 },
-  { name: 'Grammer', address: '24806 State Route 697, Delphos, OH 45833', toll: null },
+  { name: 'Grammer', address: '24086 OH-697, Delphos, OH 45833', toll: null, lat: 40.8407164, lng: -84.3583126 },
   { name: 'Meiborg Shop, 11th', address: '3814 11th St, Rockford, IL 61109', toll: null, lat: 42.2147725, lng: -89.0720146 },
   { name: 'Kapco Inc. (3am from Rockford)', address: '1150 Cheyenne Ave. Grafton, WI 53024', toll: 19.35, note: 'Drop & Hook', lat: 43.3193221, lng: -87.9350483 },
   { name: 'Kuriyama Of America Inc.', address: '14200 Commerce Court, Huntley, IL 60142', toll: 6.40, lat: 42.1243796, lng: -88.4262014 },
