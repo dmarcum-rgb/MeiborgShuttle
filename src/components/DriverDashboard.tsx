@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Navigation, ChevronDown, CheckCircle, Loader2, AlertCircle, Clock, LogIn, LogOut, Menu, X as XIcon, Package, ChevronRight } from 'lucide-react';
+import { MapPin, Navigation, ChevronDown, CheckCircle, Loader2, AlertCircle, Clock, LogIn, LogOut, Menu, X as XIcon, Package, ChevronRight, Receipt, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { TimesheetSubmission } from './TimesheetSubmission';
@@ -427,6 +427,13 @@ export function DriverDashboard() {
   const [showHnisForm, setShowHnisForm] = useState(false);
   const [hnisSubmitting, setHnisSubmitting] = useState(false);
 
+  // Toll summary state
+  type TodayStop = { vendor_name: string; toll: number | null; arrived_at: string };
+  type WeekSummary = { work_date: string; toll_total: number };
+  const [todayStops, setTodayStops] = useState<TodayStop[]>([]);
+  const [weekHistory, setWeekHistory] = useState<WeekSummary[]>([]);
+  const [tollsExpanded, setTollsExpanded] = useState(false);
+
   const watchIdRef = useRef<number | null>(null);
   const arrivedRef = useRef(false);
   const routeLogIdRef = useRef<string | null>(null);
@@ -443,6 +450,47 @@ export function DriverDashboard() {
       if (match?.display_name) setDriverName(match.display_name);
     });
   }, [user?.id]);
+
+  // Fetch toll data when idle
+  useEffect(() => {
+    if (!user?.id || routeState !== 'idle') return;
+    const today = new Date().toISOString().split('T')[0];
+
+    // Today's completed stops with toll amounts
+    supabase
+      .from('route_logs')
+      .select('vendor_name, arrived_at')
+      .eq('driver_id', user.id)
+      .gte('started_at', today + 'T00:00:00')
+      .not('arrived_at', 'is', null)
+      .order('arrived_at', { ascending: true })
+      .then(({ data }) => {
+        const stops: TodayStop[] = (data ?? []).map(r => ({
+          vendor_name: r.vendor_name,
+          toll: VENDORS.find(v => v.name === r.vendor_name)?.toll ?? null,
+          arrived_at: r.arrived_at,
+        }));
+        setTodayStops(stops);
+      });
+
+    // Last 5 weeks of timesheet toll history
+    const fiveWeeksAgo = new Date();
+    fiveWeeksAgo.setDate(fiveWeeksAgo.getDate() - 35);
+    supabase
+      .from('timesheets')
+      .select('work_date, toll_total')
+      .eq('driver_id', user.id)
+      .gte('work_date', fiveWeeksAgo.toISOString().split('T')[0])
+      .not('toll_total', 'is', null)
+      .order('work_date', { ascending: false })
+      .then(({ data }) => {
+        setWeekHistory(
+          (data ?? [])
+            .filter(t => (t.toll_total ?? 0) > 0)
+            .map(t => ({ work_date: t.work_date, toll_total: Number(t.toll_total) }))
+        );
+      });
+  }, [user?.id, routeState]);
 
   const stopWatching = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -892,6 +940,96 @@ export function DriverDashboard() {
               )}
             </button>
           </div>
+
+          {/* ── Toll Summary Card ── */}
+          {(() => {
+            const todayTotal = todayStops.reduce((s, st) => s + (st.toll ?? 0), 0);
+            const stopsWithToll = todayStops.filter(st => st.toll != null && st.toll > 0);
+            return (
+              <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <button
+                  onClick={() => setTollsExpanded(e => !e)}
+                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-rose-50 rounded-lg flex items-center justify-center">
+                      <Receipt className="w-4 h-4 text-rose-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-gray-900">Today's Tolls</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {todayStops.length === 0
+                          ? 'No stops logged yet'
+                          : `${todayStops.length} stop${todayStops.length !== 1 ? 's' : ''} completed`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xl font-bold ${todayTotal > 0 ? 'text-rose-600' : 'text-gray-400'}`}>
+                      ${todayTotal.toFixed(2)}
+                    </span>
+                    {tollsExpanded
+                      ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                      : <ChevronDown className="w-4 h-4 text-gray-400" />
+                    }
+                  </div>
+                </button>
+
+                {tollsExpanded && (
+                  <div className="border-t border-gray-100 bg-gray-50 px-5 py-4 space-y-4">
+                    {/* Today's stop breakdown */}
+                    {todayStops.length > 0 ? (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Today's Stops</p>
+                        <div className="space-y-2">
+                          {todayStops.map((s, i) => (
+                            <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-gray-200">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 truncate">{s.vendor_name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  Arrived {new Date(s.arrived_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                </p>
+                              </div>
+                              <span className={`ml-3 text-sm font-semibold flex-shrink-0 ${s.toll && s.toll > 0 ? 'text-rose-600' : 'text-gray-400'}`}>
+                                {s.toll && s.toll > 0 ? `$${s.toll.toFixed(2)}` : 'No toll'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        {stopsWithToll.length > 0 && (
+                          <div className="mt-3 flex items-center justify-between px-3 py-2 bg-rose-50 rounded-lg border border-rose-200">
+                            <p className="text-sm font-semibold text-rose-700">Total today</p>
+                            <p className="text-sm font-bold text-rose-700">${todayTotal.toFixed(2)}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic text-center py-2">No stops logged today yet.</p>
+                    )}
+
+                    {/* Recent history */}
+                    {weekHistory.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Recent History</p>
+                        <div className="space-y-1.5">
+                          {weekHistory.map((w, i) => {
+                            const d = new Date(w.work_date + 'T12:00:00');
+                            const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                            return (
+                              <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200">
+                                <p className="text-sm text-gray-700">{label}</p>
+                                <p className="text-sm font-semibold text-rose-600">${w.toll_total.toFixed(2)}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
