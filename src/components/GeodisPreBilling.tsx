@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, ChevronRight, Printer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const HOURLY_RATE = 79.00;
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -160,6 +161,73 @@ export function GeodisPreBilling() {
   const prevWeek = () => setWeekStart(w => addDays(w, -7));
   const nextWeek = () => setWeekStart(w => addDays(w, 7));
 
+  const exportToExcel = () => {
+    if (!weekData) return;
+
+    const wb = XLSX.utils.book_new();
+
+    // Header rows
+    const headerRows: (string | number)[][] = [
+      ['Meiborg Shuttles – Geodis Pre-Billing'],
+      [`Week Ending: ${fmt(weekData.weekEnd)}`],
+      ['Bill To: Logisnext / Geodis, Houston Production, Attn: Damon Gobble'],
+      [],
+      [
+        'Rate Schedule', 'Driver', 'Truck #', 'Fuel', 'Tolls',
+        ...DAYS,
+        'Reg Hrs', 'Rate', 'Total',
+      ],
+    ];
+
+    const dataRows = weekData.drivers.map((d, i) => {
+      const lineTotal = d.totalHours * HOURLY_RATE;
+      return [
+        `40 hr – Shuttle Driver ${i + 1}`,
+        d.driver_name,
+        d.vehicle_number || '',
+        d.fuel > 0 ? d.fuel : '',
+        d.tolls > 0 ? d.tolls : '',
+        ...d.dailyHours.map(h => (h != null ? h : '')),
+        d.totalHours > 0 ? d.totalHours : '',
+        HOURLY_RATE,
+        lineTotal > 0 ? lineTotal : '',
+      ];
+    });
+
+    const dailyTotals = DAYS.map((_, di) =>
+      weekData.drivers.reduce((s, d) => s + (d.dailyHours[di] ?? 0), 0)
+    );
+    const totalsRow = [
+      'Daily Totals', '', '', '', '',
+      ...dailyTotals.map(t => (t > 0 ? t : '')),
+      weekData.drivers.reduce((s, d) => s + d.totalHours, 0),
+      '', '',
+    ];
+
+    const summaryRows: (string | number)[][] = [
+      [],
+      ['', '', '', '', '', '', '', '', '', '', '', '', 'Subtotal (labor)', weekData.subtotal],
+      ['', '', '', '', '', '', '', '', '', '', '', '', 'Fuel', weekData.totalFuel],
+      ['', '', '', '', '', '', '', '', '', '', '', '', 'Tolls', weekData.totalTolls],
+      ['', '', '', '', '', '', '', '', '', '', '', '', 'Total', weekData.grandTotal],
+    ];
+
+    const allRows = [...headerRows, ...dataRows, totalsRow, ...summaryRows];
+    const ws = XLSX.utils.aoa_to_sheet(allRows);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 9 }, { wch: 9 },
+      ...DAYS.map(() => ({ wch: 8 })),
+      { wch: 9 }, { wch: 8 }, { wch: 11 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Pre-Billing');
+
+    const weekStr = weekData.weekStart.toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Geodis_PreBilling_${weekStr}.xlsx`);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -169,11 +237,12 @@ export function GeodisPreBilling() {
           <p className="text-gray-500 text-sm mt-0.5">Weekly billing preview — approved timesheets only · $79.00/hr</p>
         </div>
         <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all"
+          onClick={exportToExcel}
+          disabled={!weekData}
+          className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-all"
         >
-          <Printer className="w-4 h-4" />
-          Print
+          <FileSpreadsheet className="w-4 h-4" />
+          Export to Excel
         </button>
       </div>
 
