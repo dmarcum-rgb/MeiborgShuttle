@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 
 const HOURLY_RATE = 79.00;
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -164,62 +164,215 @@ export function GeodisPreBilling() {
   const exportToExcel = () => {
     if (!weekData) return;
 
-    const wb = XLSX.utils.book_new();
+    // ── Style helpers ──────────────────────────────────────────────────────────
+    const thinBorder = {
+      top:    { style: 'thin', color: { rgb: 'BBBBBB' } },
+      bottom: { style: 'thin', color: { rgb: 'BBBBBB' } },
+      left:   { style: 'thin', color: { rgb: 'BBBBBB' } },
+      right:  { style: 'thin', color: { rgb: 'BBBBBB' } },
+    };
+    const thickBorder = {
+      top:    { style: 'medium', color: { rgb: '555555' } },
+      bottom: { style: 'medium', color: { rgb: '555555' } },
+      left:   { style: 'medium', color: { rgb: '555555' } },
+      right:  { style: 'medium', color: { rgb: '555555' } },
+    };
 
-    // Header rows
-    const headerRows: (string | number)[][] = [
-      ['Meiborg Shuttles – Geodis Pre-Billing'],
-      [`Week Ending: ${fmt(weekData.weekEnd)}`],
-      ['Bill To: Logisnext / Geodis, Houston Production, Attn: Damon Gobble'],
-      [],
-      [
-        'Rate Schedule', 'Driver', 'Truck #', 'Fuel', 'Tolls',
-        ...DAYS,
-        'Reg Hrs', 'Rate', 'Total',
-      ],
-    ];
+    const cell = (
+      v: string | number | null,
+      t: 's' | 'n',
+      s: object = {}
+    ) => ({ v: v ?? '', t, s: { border: thinBorder, ...s } });
 
-    const dataRows = weekData.drivers.map((d, i) => {
-      const lineTotal = d.totalHours * HOURLY_RATE;
-      return [
-        `40 hr – Shuttle Driver ${i + 1}`,
-        d.driver_name,
-        d.vehicle_number || '',
-        d.fuel > 0 ? d.fuel : '',
-        d.tolls > 0 ? d.tolls : '',
-        ...d.dailyHours.map(h => (h != null ? h : '')),
-        d.totalHours > 0 ? d.totalHours : '',
-        HOURLY_RATE,
-        lineTotal > 0 ? lineTotal : '',
-      ];
+    const headerStyle = {
+      fill: { fgColor: { rgb: '1F2937' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: thickBorder,
+    };
+    const subHeaderStyle = {
+      fill: { fgColor: { rgb: '374151' } },
+      font: { bold: true, color: { rgb: 'F9FAFB' }, sz: 9 },
+      alignment: { horizontal: 'left', vertical: 'center' },
+      border: thickBorder,
+    };
+    const colHeaderStyle = {
+      fill: { fgColor: { rgb: 'F3F4F6' } },
+      font: { bold: true, color: { rgb: '111827' }, sz: 9 },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: thinBorder,
+    };
+    const totalsStyle = {
+      fill: { fgColor: { rgb: 'E5E7EB' } },
+      font: { bold: true, color: { rgb: '111827' }, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: thinBorder,
+    };
+    const summaryLabelStyle = {
+      fill: { fgColor: { rgb: 'F9FAFB' } },
+      font: { bold: true, color: { rgb: '374151' }, sz: 10 },
+      alignment: { horizontal: 'right' },
+      border: thinBorder,
+    };
+    const summaryValueStyle = {
+      fill: { fgColor: { rgb: 'F9FAFB' } },
+      font: { bold: true, color: { rgb: '111827' }, sz: 10 },
+      alignment: { horizontal: 'right' },
+      border: thinBorder,
+      numFmt: '$#,##0.00',
+    };
+    const grandTotalLabelStyle = {
+      fill: { fgColor: { rgb: '1F2937' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { horizontal: 'right' },
+      border: thickBorder,
+    };
+    const grandTotalValueStyle = {
+      fill: { fgColor: { rgb: '1F2937' } },
+      font: { bold: true, color: { rgb: 'F59E0B' }, sz: 11 },
+      alignment: { horizontal: 'right' },
+      border: thickBorder,
+      numFmt: '$#,##0.00',
+    };
+
+    // ── Number of columns: Rate Schedule, Driver, Truck, Fuel, Tolls, 7 days, Reg Hrs, Rate, Total = 14
+    const NCOLS = 14;
+    const dataRowStyles = (even: boolean) => ({
+      fill: { fgColor: { rgb: even ? 'FFFFFF' : 'F9FAFB' } },
+      font: { color: { rgb: '111827' }, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: thinBorder,
+    });
+    const dataRowLeftStyle = (even: boolean) => ({
+      ...dataRowStyles(even),
+      alignment: { horizontal: 'left', vertical: 'center' },
+    });
+    const moneyStyle = (even: boolean) => ({
+      ...dataRowStyles(even),
+      numFmt: '$#,##0.00',
     });
 
+    const wb = XLSX.utils.book_new();
+    const ws: Record<string, unknown> = {};
+
+    let row = 1; // 1-indexed
+
+    // ── Row 1: Title ──────────────────────────────────────────────────────────
+    ws[XLSX.utils.encode_cell({ r: row - 1, c: 0 })] = {
+      v: 'MEIBORG SHUTTLES – GEODIS PRE-BILLING',
+      t: 's',
+      s: {
+        fill: { fgColor: { rgb: '1F2937' } },
+        font: { bold: true, color: { rgb: 'F59E0B' }, sz: 14 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: thickBorder,
+      },
+    };
+    ws['!merges'] = [{ s: { r: row - 1, c: 0 }, e: { r: row - 1, c: NCOLS - 1 } }];
+    row++;
+
+    // ── Row 2: Billing period ─────────────────────────────────────────────────
+    ws[XLSX.utils.encode_cell({ r: row - 1, c: 0 })] = {
+      v: `Week Ending: ${fmt(weekData.weekEnd)}   |   Bill To: Logisnext / Geodis, Houston Production — Attn: Damon Gobble   |   From: Meiborg Shuttles, 240 N Prospect St, Marengo, IL 60152`,
+      t: 's',
+      s: subHeaderStyle,
+    };
+    (ws['!merges'] as object[]).push({ s: { r: row - 1, c: 0 }, e: { r: row - 1, c: NCOLS - 1 } });
+    row++;
+
+    // ── Row 3: blank spacer ───────────────────────────────────────────────────
+    row++;
+
+    // ── Row 4: Column headers ─────────────────────────────────────────────────
+    const colHeaders = [
+      'Rate Schedule', 'Driver', 'Truck #', 'Fuel', 'Tolls',
+      ...DAYS,
+      'Reg Hrs', 'Rate', 'Total',
+    ];
+    colHeaders.forEach((h, c) => {
+      ws[XLSX.utils.encode_cell({ r: row - 1, c })] = { v: h, t: 's', s: colHeaderStyle };
+    });
+    row++;
+
+    // ── Data rows ─────────────────────────────────────────────────────────────
+    weekData.drivers.forEach((d, i) => {
+      const even = i % 2 === 0;
+      const lineTotal = d.totalHours * HOURLY_RATE;
+      const cols: { v: string | number; t: 's' | 'n'; s: object }[] = [
+        { v: `40 hr – Shuttle Driver ${i + 1}`, t: 's', s: dataRowLeftStyle(even) },
+        { v: d.driver_name, t: 's', s: { ...dataRowLeftStyle(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 } } },
+        { v: d.vehicle_number || '—', t: 's', s: dataRowStyles(even) },
+        { v: d.fuel > 0 ? d.fuel : '', t: d.fuel > 0 ? 'n' : 's', s: { ...moneyStyle(even), numFmt: d.fuel > 0 ? '"($"#,##0.00")"' : undefined } },
+        { v: d.tolls > 0 ? d.tolls : '', t: d.tolls > 0 ? 'n' : 's', s: { ...moneyStyle(even), numFmt: d.tolls > 0 ? '"($"#,##0.00")"' : undefined } },
+        ...d.dailyHours.map(h => ({
+          v: h != null ? h : '',
+          t: h != null ? 'n' as const : 's' as const,
+          s: { ...dataRowStyles(even), numFmt: h != null ? '0.00' : undefined },
+        })),
+        { v: d.totalHours > 0 ? d.totalHours : '', t: d.totalHours > 0 ? 'n' : 's', s: { ...dataRowStyles(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 }, numFmt: '0.00' } },
+        { v: HOURLY_RATE, t: 'n', s: { ...moneyStyle(even), numFmt: '$#,##0.00' } },
+        { v: lineTotal > 0 ? lineTotal : '', t: lineTotal > 0 ? 'n' : 's', s: { ...moneyStyle(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 }, numFmt: '$#,##0.00' } },
+      ];
+      cols.forEach((c, ci) => {
+        ws[XLSX.utils.encode_cell({ r: row - 1, c: ci })] = c;
+      });
+      row++;
+    });
+
+    // ── Daily totals row ──────────────────────────────────────────────────────
     const dailyTotals = DAYS.map((_, di) =>
       weekData.drivers.reduce((s, d) => s + (d.dailyHours[di] ?? 0), 0)
     );
-    const totalsRow = [
-      'Daily Totals', '', '', '', '',
-      ...dailyTotals.map(t => (t > 0 ? t : '')),
-      weekData.drivers.reduce((s, d) => s + d.totalHours, 0),
-      '', '',
+    const totalsRowCells = [
+      { v: 'Daily Totals', t: 's', s: { ...totalsStyle, alignment: { horizontal: 'left' } } },
+      { v: '', t: 's', s: totalsStyle },
+      { v: '', t: 's', s: totalsStyle },
+      { v: '', t: 's', s: totalsStyle },
+      { v: '', t: 's', s: totalsStyle },
+      ...dailyTotals.map(t => ({ v: t > 0 ? t : '', t: t > 0 ? 'n' as const : 's' as const, s: { ...totalsStyle, numFmt: '0.00' } })),
+      { v: weekData.drivers.reduce((s, d) => s + d.totalHours, 0), t: 'n' as const, s: { ...totalsStyle, numFmt: '0.00' } },
+      { v: '', t: 's', s: totalsStyle },
+      { v: '', t: 's', s: totalsStyle },
     ];
+    totalsRowCells.forEach((c, ci) => {
+      ws[XLSX.utils.encode_cell({ r: row - 1, c: ci })] = c;
+    });
+    row++;
 
-    const summaryRows: (string | number)[][] = [
-      [],
-      ['', '', '', '', '', '', '', '', '', '', '', '', 'Subtotal (labor)', weekData.subtotal],
-      ['', '', '', '', '', '', '', '', '', '', '', '', 'Fuel', weekData.totalFuel],
-      ['', '', '', '', '', '', '', '', '', '', '', '', 'Tolls', weekData.totalTolls],
-      ['', '', '', '', '', '', '', '', '', '', '', '', 'Total', weekData.grandTotal],
+    // ── Spacer ────────────────────────────────────────────────────────────────
+    row++;
+
+    // ── Summary block (right-aligned, last 2 cols) ────────────────────────────
+    const summaryItems = [
+      { label: 'Subtotal (labor)', value: weekData.subtotal },
+      { label: 'Fuel', value: weekData.totalFuel },
+      { label: 'Tolls', value: weekData.totalTolls },
     ];
+    for (const item of summaryItems) {
+      ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 2 })] = { v: item.label, t: 's', s: summaryLabelStyle };
+      ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 1 })] = { v: item.value, t: 'n', s: summaryValueStyle };
+      row++;
+    }
+    // Grand total row
+    ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 2 })] = { v: 'TOTAL DUE', t: 's', s: grandTotalLabelStyle };
+    ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 1 })] = { v: weekData.grandTotal, t: 'n', s: grandTotalValueStyle };
 
-    const allRows = [...headerRows, ...dataRows, totalsRow, ...summaryRows];
-    const ws = XLSX.utils.aoa_to_sheet(allRows);
+    // ── Sheet range ───────────────────────────────────────────────────────────
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: row - 1, c: NCOLS - 1 } });
 
-    // Column widths
+    // ── Column widths ─────────────────────────────────────────────────────────
     ws['!cols'] = [
-      { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 9 }, { wch: 9 },
+      { wch: 26 }, { wch: 22 }, { wch: 9 }, { wch: 10 }, { wch: 10 },
       ...DAYS.map(() => ({ wch: 8 })),
-      { wch: 9 }, { wch: 8 }, { wch: 11 },
+      { wch: 9 }, { wch: 8 }, { wch: 12 },
+    ];
+
+    // ── Row heights ───────────────────────────────────────────────────────────
+    ws['!rows'] = [
+      { hpt: 30 },  // title
+      { hpt: 22 },  // billing info
+      { hpt: 6 },   // spacer
+      { hpt: 28 },  // col headers
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Pre-Billing');
