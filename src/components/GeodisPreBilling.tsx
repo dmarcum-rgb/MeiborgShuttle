@@ -165,13 +165,15 @@ export function GeodisPreBilling() {
       row.startTimes[dayIdx] = ts.start_time;
       row.endTimes[dayIdx] = ts.end_time;
 
-      // Attach receipt image public URLs
+      // Attach receipt image signed URLs (bucket is private, signed URLs expire in 1 hour)
       const imgs = receiptImagesByTs.get(ts.id) ?? [];
       for (const img of imgs) {
-        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(img.storage_path);
-        if (urlData?.publicUrl) {
-          if (img.receipt_type === 'fuel') row.fuelReceiptUrls.push(urlData.publicUrl);
-          else if (img.receipt_type === 'toll') row.tollReceiptUrls.push(urlData.publicUrl);
+        const { data: urlData } = await supabase.storage
+          .from('receipts')
+          .createSignedUrl(img.storage_path, 3600);
+        if (urlData?.signedUrl) {
+          if (img.receipt_type === 'fuel') row.fuelReceiptUrls.push(urlData.signedUrl);
+          else if (img.receipt_type === 'toll') row.tollReceiptUrls.push(urlData.signedUrl);
         }
       }
     }
