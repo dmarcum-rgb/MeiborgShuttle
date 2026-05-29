@@ -273,7 +273,7 @@ export function GeodisPreBilling() {
 
     // ── Row 2: Billing period ─────────────────────────────────────────────────
     ws[XLSX.utils.encode_cell({ r: row - 1, c: 0 })] = {
-      v: `Week Ending: ${fmt(weekData.weekEnd)}   |   Bill To: Logisnext / Geodis, Houston Production — Attn: Damon Gobble   |   From: Meiborg Shuttles, 240 N Prospect St, Marengo, IL 60152`,
+      v: `Week Ending: ${fmt(weekData.weekEnd)}   |   Bill To: Logisnext / Geodis, Houston Production, 240 N Prospect St, Marengo IL 60152 — Attn: Damon Gobble   |   From: Meiborg, 2210 Harrison Ave, Rockford, IL 61104`,
       t: 's',
       s: subHeaderStyle,
     };
@@ -424,13 +424,15 @@ export function GeodisPreBilling() {
               <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">Bill To</p>
               <p className="font-semibold text-lg">Logisnext / Geodis</p>
               <p className="text-gray-300 text-sm">Houston Production</p>
+              <p className="text-gray-300 text-sm">240 N Prospect St</p>
+              <p className="text-gray-400 text-xs">Marengo, IL 60152</p>
               <p className="text-gray-400 text-xs mt-0.5">Attn: Damon Gobble</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">From</p>
-              <p className="font-semibold">Meiborg Shuttles</p>
-              <p className="text-gray-300 text-sm">240 N Prospect St</p>
-              <p className="text-gray-400 text-xs">Marengo, IL 60152</p>
+              <p className="font-semibold">Meiborg</p>
+              <p className="text-gray-300 text-sm">2210 Harrison Ave</p>
+              <p className="text-gray-400 text-xs">Rockford, IL 61104</p>
               <p className="text-gray-300 text-sm mt-2">
                 <span className="text-gray-400">Week Ending: </span>
                 {fmt(weekData.weekEnd)}
