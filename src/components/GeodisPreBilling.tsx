@@ -259,7 +259,7 @@ export function GeodisPreBilling() {
 
     // ── Row 1: Title ──────────────────────────────────────────────────────────
     ws[XLSX.utils.encode_cell({ r: row - 1, c: 0 })] = {
-      v: 'MEIBORG SHUTTLES – GEODIS PRE-BILLING',
+      v: 'GEODIS BILLING',
       t: 's',
       s: {
         fill: { fgColor: { rgb: '1F2937' } },
@@ -295,6 +295,7 @@ export function GeodisPreBilling() {
     row++;
 
     // ── Data rows ─────────────────────────────────────────────────────────────
+    const dataStartRow = row;
     weekData.drivers.forEach((d, i) => {
       const even = i % 2 === 0;
       const lineTotal = d.totalHours * HOURLY_RATE;
@@ -318,6 +319,7 @@ export function GeodisPreBilling() {
       });
       row++;
     });
+    const dataEndRow = row - 1;
 
     // ── Daily totals row ──────────────────────────────────────────────────────
     const dailyTotals = DAYS.map((_, di) =>
@@ -343,12 +345,19 @@ export function GeodisPreBilling() {
     row++;
 
     // ── Summary block (right-aligned, last 2 cols) ────────────────────────────
-    const summaryItems = [
-      { label: 'Subtotal (labor)', value: weekData.subtotal },
+    // Subtotal uses a SUM formula over the Total column (col O = index 14) for all driver rows
+    const totalCol = XLSX.utils.encode_col(NCOLS - 1);
+    const subtotalFormula = `SUM(${totalCol}${dataStartRow}:${totalCol}${dataEndRow})`;
+
+    ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 2 })] = { v: 'Subtotal (labor)', t: 's', s: summaryLabelStyle };
+    ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 1 })] = { v: weekData.subtotal, f: subtotalFormula, t: 'n', s: summaryValueStyle };
+    row++;
+
+    const remainingItems = [
       { label: 'Fuel', value: weekData.totalFuel },
       { label: 'Tolls', value: weekData.totalTolls },
     ];
-    for (const item of summaryItems) {
+    for (const item of remainingItems) {
       ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 2 })] = { v: item.label, t: 's', s: summaryLabelStyle };
       ws[XLSX.utils.encode_cell({ r: row - 1, c: NCOLS - 1 })] = { v: item.value, t: 'n', s: summaryValueStyle };
       row++;
@@ -378,7 +387,7 @@ export function GeodisPreBilling() {
     XLSX.utils.book_append_sheet(wb, ws, 'Pre-Billing');
 
     const weekStr = weekData.weekStart.toISOString().split('T')[0];
-    XLSX.writeFile(wb, `Geodis_PreBilling_${weekStr}.xlsx`);
+    XLSX.writeFile(wb, `Geodis_Billing_${weekStr}.xlsx`);
   };
 
   return (
