@@ -15,6 +15,8 @@ type DriverRow = {
   tolls: number;
   startTimes: (string | null)[];
   endTimes: (string | null)[];
+  fuelReceiptUrls: string[];
+  tollReceiptUrls: string[];
 };
 
 type WeekData = {
@@ -70,6 +72,8 @@ function blankRow(name: string): DriverRow {
     totalHours: 0,
     fuel: 0,
     tolls: 0,
+    fuelReceiptUrls: [],
+    tollReceiptUrls: [],
   };
 }
 
@@ -117,11 +121,25 @@ export function GeodisPreBilling() {
 
     const { data } = await supabase
       .from('timesheets')
-      .select('driver_name, vehicle_number, work_date, start_time, end_time, total_hours, fuel_dollars, toll_total')
+      .select('id, driver_name, vehicle_number, work_date, start_time, end_time, total_hours, fuel_dollars, toll_total')
       .gte('work_date', startStr)
       .lte('work_date', endStr)
       .eq('status', 'approved')
       .order('work_date', { ascending: true });
+
+    // Fetch receipt images for all timesheets in this week
+    const timesheetIds = (data ?? []).map((ts: any) => ts.id);
+    const receiptImagesByTs = new Map<string, { receipt_type: string; storage_path: string }[]>();
+    if (timesheetIds.length > 0) {
+      const { data: images } = await supabase
+        .from('receipt_images')
+        .select('timesheet_id, receipt_type, storage_path')
+        .in('timesheet_id', timesheetIds);
+      for (const img of images ?? []) {
+        if (!receiptImagesByTs.has(img.timesheet_id)) receiptImagesByTs.set(img.timesheet_id, []);
+        receiptImagesByTs.get(img.timesheet_id)!.push(img);
+      }
+    }
 
     // Seed map with ALL known drivers as blank rows first
     const map = new Map<string, DriverRow>();
@@ -146,6 +164,16 @@ export function GeodisPreBilling() {
       row.tolls += Number(ts.toll_total ?? 0);
       row.startTimes[dayIdx] = ts.start_time;
       row.endTimes[dayIdx] = ts.end_time;
+
+      // Attach receipt image public URLs
+      const imgs = receiptImagesByTs.get(ts.id) ?? [];
+      for (const img of imgs) {
+        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(img.storage_path);
+        if (urlData?.publicUrl) {
+          if (img.receipt_type === 'fuel') row.fuelReceiptUrls.push(urlData.publicUrl);
+          else if (img.receipt_type === 'toll') row.tollReceiptUrls.push(urlData.publicUrl);
+        }
+      }
     }
 
     const drivers = Array.from(map.values()).sort((a, b) => a.driver_name.localeCompare(b.driver_name));
@@ -299,12 +327,48 @@ export function GeodisPreBilling() {
     weekData.drivers.forEach((d, i) => {
       const even = i % 2 === 0;
       const lineTotal = d.totalHours * HOURLY_RATE;
-      const cols: { v: string | number; t: 's' | 'n'; s: object }[] = [
+      const cols: { v: string | number; t: 's' | 'n'; s: object; l?: object }[] = [
         { v: `40 hr – Shuttle Driver ${i + 1}`, t: 's', s: dataRowLeftStyle(even) },
         { v: d.driver_name, t: 's', s: { ...dataRowLeftStyle(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 } } },
         { v: d.vehicle_number || '—', t: 's', s: dataRowStyles(even) },
-        { v: d.fuel > 0 ? d.fuel : '', t: d.fuel > 0 ? 'n' : 's', s: { ...moneyStyle(even), numFmt: d.fuel > 0 ? '"($"#,##0.00")"' : undefined } },
-        { v: d.tolls > 0 ? d.tolls : '', t: d.tolls > 0 ? 'n' : 's', s: { ...moneyStyle(even), numFmt: d.tolls > 0 ? '"($"#,##0.00")"' : undefined } },
+        {
+          v: d.fuel > 0 ? d.fuel : '',
+          t: d.fuel > 0 ? 'n' : 's',
+          s: {
+            ...moneyStyle(even),
+            numFmt: d.fuel > 0 ? '"($"#,##0.00")"' : undefined,
+            font: d.fuelReceiptUrls.length > 0
+              ? { color: { rgb: '1D4ED8' }, underline: true, sz: 10 }
+              : { color: { rgb: '111827' }, sz: 10 },
+          },
+          ...(d.fuelReceiptUrls.length > 0 ? {
+            l: {
+              Target: d.fuelReceiptUrls[0],
+              Tooltip: d.fuelReceiptUrls.length === 1
+                ? 'View fuel receipt'
+                : `View fuel receipts (${d.fuelReceiptUrls.length} images):\n${d.fuelReceiptUrls.join('\n')}`,
+            },
+          } : {}),
+        },
+        {
+          v: d.tolls > 0 ? d.tolls : '',
+          t: d.tolls > 0 ? 'n' : 's',
+          s: {
+            ...moneyStyle(even),
+            numFmt: d.tolls > 0 ? '"($"#,##0.00")"' : undefined,
+            font: d.tollReceiptUrls.length > 0
+              ? { color: { rgb: '1D4ED8' }, underline: true, sz: 10 }
+              : { color: { rgb: '111827' }, sz: 10 },
+          },
+          ...(d.tollReceiptUrls.length > 0 ? {
+            l: {
+              Target: d.tollReceiptUrls[0],
+              Tooltip: d.tollReceiptUrls.length === 1
+                ? 'View toll receipt'
+                : `View toll receipts (${d.tollReceiptUrls.length} images):\n${d.tollReceiptUrls.join('\n')}`,
+            },
+          } : {}),
+        },
         ...d.dailyHours.map(h => ({
           v: h != null ? h : '',
           t: h != null ? 'n' as const : 's' as const,
