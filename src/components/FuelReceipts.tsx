@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit, Trash2, X, Fuel, Truck, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Fuel, Truck, FileText, Image, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type FuelRow = {
   id: string;
@@ -13,6 +13,7 @@ type FuelRow = {
   location: string;
   receipt_number: string;
   timesheet_id?: string;
+  receiptImageUrls: string[];
 };
 
 type ManualFormData = {
@@ -43,6 +44,7 @@ export function FuelReceipts() {
   const [form, setForm] = useState<ManualFormData>(BLANK_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -62,7 +64,26 @@ export function FuelReceipts() {
         .order('date', { ascending: false }),
     ]);
 
-    const tsRows: FuelRow[] = (tsRes.data ?? []).map(t => ({
+    const timesheetIds = (tsRes.data ?? []).map((t: any) => t.id);
+    const imagesByTs = new Map<string, string[]>();
+    if (timesheetIds.length > 0) {
+      const { data: imgs } = await supabase
+        .from('receipt_images')
+        .select('timesheet_id, storage_path')
+        .eq('receipt_type', 'fuel')
+        .in('timesheet_id', timesheetIds);
+      for (const img of imgs ?? []) {
+        const { data: signed } = await supabase.storage
+          .from('receipts')
+          .createSignedUrl(img.storage_path, 3600);
+        if (signed?.signedUrl) {
+          if (!imagesByTs.has(img.timesheet_id)) imagesByTs.set(img.timesheet_id, []);
+          imagesByTs.get(img.timesheet_id)!.push(signed.signedUrl);
+        }
+      }
+    }
+
+    const tsRows: FuelRow[] = (tsRes.data ?? []).map((t: any) => ({
       id: t.id,
       source: 'timesheet',
       date: t.work_date,
@@ -73,9 +94,10 @@ export function FuelReceipts() {
       location: '',
       receipt_number: '',
       timesheet_id: t.id,
+      receiptImageUrls: imagesByTs.get(t.id) ?? [],
     }));
 
-    const manualRows: FuelRow[] = (manualRes.data ?? []).map(r => ({
+    const manualRows: FuelRow[] = (manualRes.data ?? []).map((r: any) => ({
       id: r.id,
       source: 'manual',
       date: r.date,
@@ -85,9 +107,9 @@ export function FuelReceipts() {
       amount: r.amount ? Number(r.amount) : null,
       location: r.location ?? '',
       receipt_number: r.receipt_number ?? '',
+      receiptImageUrls: [],
     }));
 
-    // Merge and sort by date desc
     const all = [...tsRows, ...manualRows].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -215,7 +237,7 @@ export function FuelReceipts() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Date', 'Driver', 'Truck #', 'Location', 'Gallons', 'Amount', 'Receipt #', 'Source', ''].map(h => (
+                  {['Date', 'Driver', 'Truck #', 'Location', 'Gallons', 'Amount', 'Receipt', 'Source', ''].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -253,8 +275,33 @@ export function FuelReceipts() {
                     <td className="px-4 py-3 text-amber-700 font-semibold whitespace-nowrap">
                       {row.amount != null ? fmt(row.amount) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {row.receipt_number || '—'}
+                    <td className="px-4 py-3">
+                      {row.receiptImageUrls.length > 0 ? (
+                        <button
+                          onClick={() => setLightbox({ urls: row.receiptImageUrls, index: 0 })}
+                          className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 transition-colors group"
+                        >
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover:border-blue-300 transition-colors flex-shrink-0">
+                            <img
+                              src={row.receiptImageUrls[0]}
+                              alt="Receipt"
+                              className="w-full h-full object-cover"
+                            />
+                            {row.receiptImageUrls.length > 1 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">+{row.receiptImageUrls.length - 1}</span>
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs font-medium">
+                            {row.receiptImageUrls.length === 1 ? 'View' : `${row.receiptImageUrls.length} imgs`}
+                          </span>
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-xs">
+                          {row.receipt_number || '—'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {row.source === 'timesheet' ? (
@@ -294,8 +341,78 @@ export function FuelReceipts() {
         </div>
       )}
 
-      {/* Add/Edit modal */}
-      {showModal && (
+      {/* Receipt image lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Image className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-semibold text-gray-900">
+                  Fuel Receipt
+                  {lightbox.urls.length > 1 && (
+                    <span className="text-gray-400 font-normal ml-1">
+                      {lightbox.index + 1} / {lightbox.urls.length}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <button
+                onClick={() => setLightbox(null)}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="relative bg-gray-50">
+              <img
+                src={lightbox.urls[lightbox.index]}
+                alt={`Receipt ${lightbox.index + 1}`}
+                className="w-full max-h-[70vh] object-contain"
+              />
+              {lightbox.urls.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setLightbox(l => l && l.index > 0 ? { ...l, index: l.index - 1 } : l)}
+                    disabled={lightbox.index === 0}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-md text-gray-700 disabled:opacity-30 transition-all"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setLightbox(l => l && l.index < l.urls.length - 1 ? { ...l, index: l.index + 1 } : l)}
+                    disabled={lightbox.index === lightbox.urls.length - 1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-md text-gray-700 disabled:opacity-30 transition-all"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+            </div>
+            {lightbox.urls.length > 1 && (
+              <div className="flex gap-2 p-3 bg-white overflow-x-auto">
+                {lightbox.urls.map((url, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setLightbox(l => l ? { ...l, index: i } : l)}
+                    className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${i === lightbox.index ? 'border-blue-500' : 'border-gray-200 hover:border-gray-400'}`}
+                  >
+                    <img src={url} alt={`Receipt ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit modal */}      {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
