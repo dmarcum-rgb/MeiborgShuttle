@@ -1,6 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { NotificationBell } from './NotificationBell';
 
 type LayoutProps = {
   children: ReactNode;
@@ -21,6 +23,17 @@ const navItems = [
 
 export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const { user, signOut } = useAuth();
+  const [role, setRole] = useState<'office' | 'driver' | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setRole((data?.role as 'office' | 'driver') ?? null));
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -73,8 +86,11 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
               <p className="text-white text-sm font-medium truncate">
                 {user?.email}
               </p>
-              <p className="text-gray-400 text-xs">Meiborg Employee</p>
+              <p className="text-gray-400 text-xs">
+                {role === 'office' ? 'Office' : 'Driver'}
+              </p>
             </div>
+            {role === 'office' && <NotificationBell />}
           </div>
           <button
             onClick={signOut}
