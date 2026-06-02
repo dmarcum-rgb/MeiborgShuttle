@@ -12,6 +12,15 @@ export default {
         secondary: '#2a2a2a',
         accent: '#6b6b6b',
       },
+      keyframes: {
+        shrink: {
+          '0%': { width: '100%' },
+          '100%': { width: '0%' },
+        },
+      },
+      animation: {
+        shrink: 'shrink 6s linear forwards',
+      },
     },
   },
   plugins: [],

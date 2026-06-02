@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { NotificationBell } from './NotificationBell';
+import { ClockToast } from './ClockToast';
 
 type LayoutProps = {
   children: ReactNode;
@@ -106,6 +107,8 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
       <main className="pl-64">
         {children}
       </main>
+
+      {role === 'office' && <ClockToast />}
     </div>
   );
 }
