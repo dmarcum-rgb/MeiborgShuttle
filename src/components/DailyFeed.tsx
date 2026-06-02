@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Navigation, CheckCircle, LogOut, Clock, ChevronLeft, ChevronRight, RefreshCw, Radio } from 'lucide-react';
+import { CheckCircle, LogOut, Clock, ChevronLeft, ChevronRight, RefreshCw, Radio } from 'lucide-react';
 
 type RawLog = {
   id: string;
@@ -17,7 +17,7 @@ type DriverMap = Record<string, string>; // driver_id → display_name
 type FeedEvent = {
   id: string;
   ts: Date;
-  kind: 'departed' | 'arrived' | 'en_route';
+  kind: 'departed' | 'arrived';
   driverName: string;
   vendorName: string;
   address: string;
@@ -82,19 +82,6 @@ function buildEvents(logs: RawLog[], drivers: DriverMap, newIds: Set<string>): F
       });
     }
 
-    // En route (started but not yet arrived)
-    if (!log.arrived_at) {
-      events.push({
-        id: `${log.id}-enr`,
-        ts: new Date(log.started_at),
-        kind: 'en_route',
-        driverName,
-        vendorName: log.vendor_name,
-        address: log.address,
-        logId: log.id,
-        isNew: newIds.has(`${log.id}-enr`),
-      });
-    }
   }
 
   return events.sort((a, b) => b.ts.getTime() - a.ts.getTime());
@@ -120,16 +107,6 @@ const EVENT_CONFIG = {
     dot: 'bg-green-500',
     badgeBg: 'bg-green-50',
     badgeText: 'text-green-700',
-  },
-  en_route: {
-    icon: Navigation,
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-    label: 'En Route',
-    labelColor: 'text-blue-700',
-    dot: 'bg-blue-500',
-    badgeBg: 'bg-blue-50',
-    badgeText: 'text-blue-700',
   },
 };
 
@@ -232,7 +209,6 @@ export function DailyFeed() {
   // Stats
   const arrivals = events.filter(e => e.kind === 'arrived').length;
   const departures = events.filter(e => e.kind === 'departed').length;
-  const enRoute = events.filter(e => e.kind === 'en_route').length;
   const uniqueDrivers = new Set(events.map(e => e.driverName)).size;
 
   return (
@@ -284,11 +260,10 @@ export function DailyFeed() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Arrivals', value: arrivals, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Departures', value: departures, icon: LogOut, color: 'text-gray-600', bg: 'bg-gray-100' },
-          { label: 'En Route', value: enRoute, icon: Navigation, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Active Drivers', value: uniqueDrivers, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
@@ -311,7 +286,7 @@ export function DailyFeed() {
           </div>
         ) : events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <Navigation className="w-10 h-10 mb-3 text-gray-200" />
+            <Clock className="w-10 h-10 mb-3 text-gray-200" />
             <p className="font-medium text-gray-600">No activity yet</p>
             <p className="text-sm mt-1">Driver stops will appear here as they happen</p>
           </div>
