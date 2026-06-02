@@ -523,6 +523,7 @@ export function DriverDashboard() {
     arrivedRef.current = true;
     stopWatching();
     setArrivedVendor(vendor);
+    setShowHnisPrompt(true);
     setRouteState('arrived');
     await supabase
       .from('route_logs')
