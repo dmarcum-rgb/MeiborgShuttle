@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2, Newspaper } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { NotificationBell } from './NotificationBell';
 import { ClockToast } from './ClockToast';
@@ -13,6 +13,7 @@ type LayoutProps = {
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'feed', label: 'Daily Feed', icon: Newspaper },
   { id: 'drivers', label: 'Drivers', icon: Users },
   { id: 'timesheets', label: 'Timesheets', icon: FileText },
   { id: 'stops', label: 'Stops', icon: MapPin },

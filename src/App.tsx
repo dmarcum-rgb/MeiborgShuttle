@@ -3,6 +3,7 @@ import { useAuth, AuthProvider } from './hooks/useAuth';
 import { Auth } from './components/Auth';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
+import { DailyFeed } from './components/DailyFeed';
 import { DriverDashboard } from './components/DriverDashboard';
 import { Drivers } from './components/Drivers';
 import { Stops } from './components/Stops';
@@ -47,6 +48,8 @@ function AppContent() {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
+      case 'feed':
+        return <DailyFeed />;
       case 'drivers':
         return <Drivers />;
       case 'stops':
