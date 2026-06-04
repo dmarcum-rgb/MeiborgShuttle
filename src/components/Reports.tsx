@@ -291,10 +291,17 @@ export function Reports() {
       const rows = [
         ['Driver', 'Load #', 'Date', 'Supplier', 'Supplier Address', 'Depart to Supplier', 'Arrive at Supplier', 'Depart from Supplier', 'Arrive at Plant', 'Tolls', 'Notes'],
         ...hnisLoads.map(h => [
-          h.driver_name, h.load_number, h.log_date, h.supplier_name, h.supplier_address,
-          h.departure_time_to_supplier ?? '', h.arrival_time_to_supplier ?? '',
-          h.departure_time_from_supplier ?? '', h.arrival_time_to_plant ?? '',
-          h.tolls_accrued != null ? `$${Number(h.tolls_accrued).toFixed(2)}` : '', h.notes,
+          h.driver_name,
+          h.load_number,
+          new Date(h.log_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+          h.supplier_name,
+          h.supplier_address,
+          h.departure_time_to_supplier ?? '',
+          h.arrival_time_to_supplier ?? '',
+          h.departure_time_from_supplier ?? '',
+          h.arrival_time_to_plant ?? '',
+          h.tolls_accrued != null ? `$${Number(h.tolls_accrued).toFixed(2)}` : '',
+          h.notes,
         ]),
       ];
       download(rows, 'hnis_loads_report');
@@ -302,10 +309,13 @@ export function Reports() {
   }
 
   function download(rows: (string | number)[][], name: string) {
+    const { from, to } = getPeriodRange(period, customFrom, customTo);
+    const fromStr = from.toISOString().split('T')[0];
+    const toStr = to.toISOString().split('T')[0];
     const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `${name}_${period}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${name}_${fromStr}_to_${toStr}.csv`;
     a.click();
   }
 
