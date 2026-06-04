@@ -15,46 +15,6 @@ type Vendor = {
   lng?: number;
 };
 
-const VENDORS: Vendor[] = [
-  { name: 'Alliance Ind. (Waupaca)', address: 'N. 2467 Vaughan Rd, Waupaca, WI 54981', toll: null, lat: 44.3266842, lng: -89.0013343 },
-  { name: 'Bolzoni Auramo Inc.', address: '17635 Hoffman Way, Homewood, IL 60430', toll: 84.50, lat: 41.5702390, lng: -87.6459885 },
-  { name: 'BTS 5', address: '6709 Main St. Union, IL 60180', toll: null, lat: 42.2307898, lng: -88.5431338 },
-  { name: 'Capital Equip. Kaukauna', address: '2550 Progress Way, Kaukauna, WI 54130', toll: null, note: 'w/ Heartland', lat: 44.3047952, lng: -88.2591546 },
-  { name: 'CCTV', address: '1111 Rose Rd. Lake Zurich, IL 60047', toll: null, note: 'w/ Clipper', lat: 42.2010611, lng: -88.0693165 },
-  { name: 'Clipper Ind. Inc.', address: '1520 W. Norwood Ave, Itasca, IL 60143', toll: 23.30, lat: 41.9859581, lng: -88.0410774 },
-  { name: 'DLS Elect. Systems', address: '166 South Carter, Genoa City, WI 53128', toll: null, lat: 42.5014586, lng: -88.3256606 },
-  { name: 'Donghua', address: '493 Mission St. Carol Stream, IL 60188', toll: null, note: "w/ O'Hare", lat: 41.9256210, lng: -88.1013515 },
-  { name: 'Equipment Depot - Itasca', address: '751 Expressway Dr. Itasca, IL 60143', toll: 23.30, lat: 41.9796393, lng: -88.0258205 },
-  { name: 'Equipment Depot - Heartland', address: '1100 Cottonwood Ave. Heartland, WI 53029', toll: null, lat: 43.0828485, lng: -88.3509866 },
-  { name: 'Equipment Depot - Rockford', address: '4414 11th Street, Rockford, IL 61109', toll: null, lat: 42.2127933, lng: -89.0723229 },
-  { name: 'Fairchild Ind.', address: '475 Capital Drive, Lake Zurich, IL 60047', toll: null, lat: 42.2064137, lng: -88.0650475 },
-  { name: 'Friedman (Flatbed)', address: '4303 Kenedy Ave. East Chicago, IN 46312', toll: 115.95, lat: 41.6386198, lng: -87.4616017 },
-  { name: 'Grammer', address: '24086 OH-697, Delphos, OH 45833', toll: null, lat: 40.8407164, lng: -84.3583126 },
-  { name: 'Meiborg Shop, 11th', address: '3814 11th St, Rockford, IL 61109', toll: null, lat: 42.2147725, lng: -89.0720146 },
-  { name: 'Kapco Inc. (3am from Rockford)', address: '1150 Cheyenne Ave. Grafton, WI 53024', toll: 19.35, note: 'Drop & Hook', lat: 43.3193221, lng: -87.9350483 },
-  { name: 'Kuriyama Of America Inc.', address: '14200 Commerce Court, Huntley, IL 60142', toll: 6.40, lat: 42.1243796, lng: -88.4262014 },
-  { name: 'L.J. Fab.', address: '944 Research Pkwy. Rockford, IL 61109', toll: null, lat: 42.2183322, lng: -89.0830221 },
-  { name: 'Leading Americas', address: '130 Arrowhead Dr. Hampshire, IL 60410', toll: null, lat: 42.1487165, lng: -88.5084026 },
-  { name: 'Leibovich', address: '305 Peoples Ave. Rockford, IL 61104', toll: 33.90, note: 'Drop & Hook', lat: 42.2413258, lng: -89.0899886 },
-  { name: 'Liftek', address: 'Meiborg/Opps. LOAD', toll: null },
-  { name: 'Loginext, MLA, C.L.', address: '340 Commerce Dr. Unit A, Crystal Lake, IL 60014', toll: null, lat: 42.2496403, lng: -88.3297300 },
-  { name: 'MAHLE Rockford', address: '4814 American Rd. Rockford, IL 61109', toll: null, lat: 42.2296901, lng: -89.0223648 },
-  { name: 'Meiborg Belvedere WH', address: '795 Landmark Dr. Belvedere, IL 61008', toll: null, lat: 42.2524515, lng: -88.8931015 },
-  { name: 'Michellin - OEM (Camso)', address: '24601 S. Bradley St, Channahon, IL 60410', toll: 67.60, lat: 41.4441171, lng: -88.1949385 },
-  { name: 'Milama', address: 'Meiborg/Opps. LOAD', toll: null },
-  { name: 'Misa/Miyama', address: 'Meiborg/Opps. LOAD', toll: null },
-  { name: 'New Age', address: '2120 N. West St. River Grove, IL 60171', toll: 23.30, note: 'w/ Northfield', lat: 41.9183795, lng: -87.8501759 },
-  { name: 'Northfield Ind. LLC (980)', address: '980 Lunt Ave. Elk Grove Village, IL 60007', toll: 23.30, note: 'w/ New Age', lat: 42.0019422, lng: -87.9724457 },
-  { name: "O'Hare Metal Prod. Div", address: '1098 Touhy Ave. Elk Grove Village, IL 60007', toll: 23.30, lat: 42.0076960, lng: -87.9706280 },
-  { name: 'PHC', address: 'Meiborg/Opps. LOAD', toll: null },
-  { name: 'PMW, Shhhhhh', address: '1005 McKinley Ave. Belvidere, IL 61008', toll: null, lat: 42.2705504, lng: -88.8414257 },
-  { name: 'Timber Creek (Wedges)', address: '128 Badger St. Walworth, WI 53184', toll: null, lat: 42.5381975, lng: -88.5982851 },
-  { name: 'UCA Marengo', address: '240 N. Prospect Ave. Marengo, IL 60152', toll: null, lat: 42.2501490, lng: -88.6081303 },
-  { name: 'UCA Plant #2 201', address: '201 N Prospect St, Marengo, IL 60152', toll: null, lat: 42.2525117, lng: -88.5961920 },
-  { name: 'UCA Plant #3 (Geodis)', address: '19720 E Grant Hwy, Marengo, IL 60152', toll: null, lat: 42.2403008, lng: -88.5879921 },
-  { name: 'Value Added', address: '1595 Northrock Ct. Rockford, IL 61103', toll: null, lat: 42.3351396, lng: -89.0700624 },
-];
-
 function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -167,16 +127,21 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
           .not('arrived_at', 'is', null)
           .order('started_at', { ascending: true });
 
-        const completedRoutes: CompletedRoute[] = (routes ?? []).map(r => {
-          const vendor = VENDORS.find(v => v.name === r.vendor_name);
-          return {
-            vendor_name: r.vendor_name,
-            city_address: r.address,
-            arrive_time: r.arrived_at ? new Date(r.arrived_at).toTimeString().slice(0, 5) : '',
-            departure_time: r.departed_at ? new Date(r.departed_at).toTimeString().slice(0, 5) : '',
-            toll_amount: vendor?.toll ?? null,
-          };
-        });
+        // Look up toll amounts from vendor_stops for each route
+        const vendorNames = [...new Set((routes ?? []).map(r => r.vendor_name))];
+        const { data: tollData } = vendorNames.length
+          ? await supabase.from('vendor_stops').select('name, toll_amount').in('name', vendorNames)
+          : { data: [] };
+        const tollMap: Record<string, number | null> = {};
+        for (const vs of tollData ?? []) tollMap[vs.name] = vs.toll_amount != null ? Number(vs.toll_amount) : null;
+
+        const completedRoutes: CompletedRoute[] = (routes ?? []).map(r => ({
+          vendor_name: r.vendor_name,
+          city_address: r.address,
+          arrive_time: r.arrived_at ? new Date(r.arrived_at).toTimeString().slice(0, 5) : '',
+          departure_time: r.departed_at ? new Date(r.departed_at).toTimeString().slice(0, 5) : '',
+          toll_amount: tollMap[r.vendor_name] ?? null,
+        }));
 
         setStatus('clocked_out');
         onStatusChange(false);
@@ -262,6 +227,7 @@ export function DriverDashboard() {
   const [clockedIn, setClockedIn] = useState<boolean | null>(null);
   const [driverName, setDriverName] = useState('');
   const [hnisNumber, setHnisNumber] = useState('');
+  const [vendors, setVendors] = useState<Vendor[]>([]);
 
   // Toll summary state
   type TodayStop = { vendor_name: string; toll: number | null; arrived_at: string };
@@ -274,9 +240,30 @@ export function DriverDashboard() {
   const arrivedRef = useRef(false);
   const routeLogIdRef = useRef<string | null>(null);
 
-  const selectedVendor = VENDORS.find(v => v.name === selected);
+  const selectedVendor = vendors.find(v => v.name === selected);
   const isMeiborg = selectedVendor?.address.startsWith('Meiborg') ?? false;
   const hasCoords = !!(selectedVendor?.lat && selectedVendor?.lng);
+
+  // Fetch active vendor stops from the database
+  useEffect(() => {
+    supabase
+      .from('vendor_stops')
+      .select('name, address, lat, lng, toll_amount, notes')
+      .eq('active', true)
+      .order('name')
+      .then(({ data }) => {
+        setVendors(
+          (data ?? []).map(r => ({
+            name: r.name,
+            address: r.address,
+            lat: r.lat ?? undefined,
+            lng: r.lng ?? undefined,
+            toll: r.toll_amount != null ? Number(r.toll_amount) : null,
+            note: r.notes || undefined,
+          }))
+        );
+      });
+  }, []);
 
   // Resolve driver display name for HNIS form
   useEffect(() => {
@@ -317,7 +304,7 @@ export function DriverDashboard() {
       .then(({ data }) => {
         const stops: TodayStop[] = (data ?? []).map(r => ({
           vendor_name: r.vendor_name,
-          toll: VENDORS.find(v => v.name === r.vendor_name)?.toll ?? null,
+          toll: vendors.find(v => v.name === r.vendor_name)?.toll ?? null,
           arrived_at: r.arrived_at,
         }));
         setTodayStops(stops);
@@ -632,7 +619,7 @@ export function DriverDashboard() {
 
                 {open && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-72 overflow-y-auto">
-                    {VENDORS.map((vendor) => (
+                    {vendors.map((vendor) => (
                       <button
                         key={vendor.name}
                         type="button"
