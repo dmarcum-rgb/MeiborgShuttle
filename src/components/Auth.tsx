@@ -63,7 +63,9 @@ export function Auth() {
         const { error: signUpErr } = await signUp(email, paddedPassword);
         if (signUpErr) {
           const msg = signUpErr.message?.toLowerCase() ?? '';
-          if (msg.includes('already') || msg.includes('database') || msg.includes('registered')) {
+          // Only treat "already registered" as a password error — database errors
+          // are real failures (trigger issues etc.) and should surface as-is.
+          if (msg.includes('already registered') || msg.includes('user already exists')) {
             throw new Error('Invalid password. Please try again.');
           }
           throw signUpErr;
