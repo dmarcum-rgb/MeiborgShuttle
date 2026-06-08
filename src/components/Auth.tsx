@@ -61,7 +61,13 @@ export function Auth() {
       const { error: signInErr } = await signIn(email, paddedPassword);
       if (signInErr) {
         const { error: signUpErr } = await signUp(email, paddedPassword);
-        if (signUpErr) throw signUpErr;
+        if (signUpErr) {
+          const msg = signUpErr.message?.toLowerCase() ?? '';
+          if (msg.includes('already') || msg.includes('database') || msg.includes('registered')) {
+            throw new Error('Invalid password. Please try again.');
+          }
+          throw signUpErr;
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid password. Please try again.');
