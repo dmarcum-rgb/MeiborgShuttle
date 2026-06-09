@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Navigation, ChevronDown, CheckCircle, Loader2, AlertCircle, Clock, LogIn, LogOut, Menu, X as XIcon, Package, Receipt, ChevronUp } from 'lucide-react';
+import { MapPin, Navigation, ChevronDown, CheckCircle, Loader2, AlertCircle, Clock, LogIn, LogOut, Menu, X as XIcon, Package, Receipt, ChevronUp, MessageSquareWarning } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { TimesheetSubmission } from './TimesheetSubmission';
+import { reportError } from '../lib/logError';
 
 const ARRIVAL_RADIUS_M = 200;
 
@@ -240,6 +241,12 @@ export function DriverDashboard() {
   const arrivedRef = useRef(false);
   const routeLogIdRef = useRef<string | null>(null);
 
+  // Report issue state
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState('');
+  const [reportSending, setReportSending] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
+
   const selectedVendor = vendors.find(v => v.name === selected);
   const isMeiborg = selectedVendor?.address.startsWith('Meiborg') ?? false;
   const hasCoords = !!(selectedVendor?.lat && selectedVendor?.lng);
@@ -343,7 +350,6 @@ export function DriverDashboard() {
     arrivedRef.current = true;
     stopWatching();
     setArrivedVendor(vendor);
-    setShowHnisPrompt(true);
     setRouteState('arrived');
     await supabase
       .from('route_logs')
@@ -434,6 +440,20 @@ export function DriverDashboard() {
   const handleSignOut = async () => {
     stopWatching();
     await supabase.auth.signOut();
+  };
+
+  const handleReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportText.trim()) return;
+    setReportSending(true);
+    await reportError('driver-report', reportText.trim(), driverName || user?.email || 'Driver', {
+      selected_vendor: selected || null,
+      route_state: routeState,
+    });
+    setReportSending(false);
+    setReportSent(true);
+    setReportText('');
+    setTimeout(() => { setReportSent(false); setReportOpen(false); }, 2500);
   };
 
   // ─── TIMESHEET MODAL ─────────────────────────────────────────────────────────
@@ -788,6 +808,50 @@ export function DriverDashboard() {
               </div>
             );
           })()}
+
+          {/* ── Report Issue ── */}
+          <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <button
+              onClick={() => { setReportOpen(o => !o); setReportSent(false); }}
+              className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
+                  <MessageSquareWarning className="w-4 h-4 text-amber-600" />
+                </div>
+                <p className="text-sm font-semibold text-gray-700">Report an Issue</p>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${reportOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {reportOpen && (
+              <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                {reportSent ? (
+                  <div className="flex items-center gap-2 text-green-700 py-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Issue reported — office has been notified.</span>
+                  </div>
+                ) : (
+                  <form onSubmit={handleReport} className="space-y-3">
+                    <textarea
+                      value={reportText}
+                      onChange={e => setReportText(e.target.value)}
+                      rows={3}
+                      placeholder="Describe the issue (e.g. geofence not detecting arrival, stop missing from list)..."
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-gray-800 transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={reportSending || !reportText.trim()}
+                      className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      {reportSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquareWarning className="w-4 h-4" />}
+                      {reportSending ? 'Sending...' : 'Send Report'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

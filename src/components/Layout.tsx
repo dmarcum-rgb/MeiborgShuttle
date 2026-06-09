@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2, Newspaper } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, MapPin, Fuel, Banknote, FileText, ReceiptText, BarChart2, Newspaper, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { NotificationBell } from './NotificationBell';
 import { ClockToast } from './ClockToast';
@@ -21,11 +21,13 @@ const navItems = [
   { id: 'tolls', label: 'Toll Receipts', icon: Banknote },
   { id: 'hours', label: 'Geodis Pre-Billing', icon: ReceiptText },
   { id: 'reports', label: 'Reports', icon: BarChart2 },
+  { id: 'errors', label: 'System Errors', icon: AlertTriangle },
 ];
 
 export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const { user, signOut } = useAuth();
   const [role, setRole] = useState<'office' | 'driver' | null>(null);
+  const [openErrorCount, setOpenErrorCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -36,6 +38,27 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
       .maybeSingle()
       .then(({ data }) => setRole((data?.role as 'office' | 'driver') ?? null));
   }, [user]);
+
+  useEffect(() => {
+    if (role !== 'office') return;
+    supabase
+      .from('system_errors')
+      .select('id', { count: 'exact', head: true })
+      .eq('resolved', false)
+      .then(({ count }) => setOpenErrorCount(count ?? 0));
+
+    const channel = supabase
+      .channel('system_errors_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_errors' }, () => {
+        supabase
+          .from('system_errors')
+          .select('id', { count: 'exact', head: true })
+          .eq('resolved', false)
+          .then(({ count }) => setOpenErrorCount(count ?? 0));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [role]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,7 +93,12 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                {item.label}
+                <span className="flex-1 text-left">{item.label}</span>
+                {item.id === 'errors' && openErrorCount > 0 && (
+                  <span className="flex items-center justify-center min-w-5 h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                    {openErrorCount > 99 ? '99+' : openErrorCount}
+                  </span>
+                )}
               </button>
             );
           })}
