@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, Clock, ChevronDown, ChevronRight, Download, Image, FileText, Truck, ExternalLink, Receipt, Trash2, Loader2, Edit2, Plus, X, Save } from 'lucide-react';
+import { CheckCircle, Clock, ChevronDown, ChevronRight, Download, Image, FileText, Truck, ExternalLink, Receipt, Trash2, Loader2, Edit2, Plus, X, Save, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type Timesheet = {
@@ -109,6 +109,7 @@ export function Timesheets() {
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editStops, setEditStops] = useState<EditStop[]>([]);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTimesheets();
@@ -190,11 +191,13 @@ export function Timesheets() {
     setEditingTs(null);
     setEditForm(null);
     setEditStops([]);
+    setSaveError(null);
   };
 
   const saveEdit = async () => {
     if (!editingTs || !editForm) return;
     setSaving(true);
+    setSaveError(null);
 
     const tsPayload = {
       driver_name: editForm.driver_name.trim(),
@@ -203,18 +206,29 @@ export function Timesheets() {
       start_time: editForm.start_time,
       end_time: editForm.end_time,
       total_hours: parseFloat(editForm.total_hours) || 0,
-      lunch_start: editForm.lunch_start || null,
-      lunch_end: editForm.lunch_end || null,
+      // NOT NULL columns — must use '' not null
+      lunch_start: editForm.lunch_start || '',
+      lunch_end: editForm.lunch_end || '',
       notes: editForm.notes.trim(),
       fuel_gallons: editForm.fuel_gallons ? parseFloat(editForm.fuel_gallons) : null,
       fuel_dollars: editForm.fuel_dollars ? parseFloat(editForm.fuel_dollars) : null,
       toll_total: editForm.toll_total ? parseFloat(editForm.toll_total) : null,
     };
 
-    await supabase.from('timesheets').update(tsPayload).eq('id', editingTs.id);
+    const { error: tsError } = await supabase.from('timesheets').update(tsPayload).eq('id', editingTs.id);
+    if (tsError) {
+      setSaveError(`Failed to save timesheet: ${tsError.message}`);
+      setSaving(false);
+      return;
+    }
 
-    // Delete all existing stops, re-insert in order
-    await supabase.from('timesheet_stops').delete().eq('timesheet_id', editingTs.id);
+    const { error: delError } = await supabase.from('timesheet_stops').delete().eq('timesheet_id', editingTs.id);
+    if (delError) {
+      setSaveError(`Failed to update stops: ${delError.message}`);
+      setSaving(false);
+      return;
+    }
+
     const stopsToInsert = editStops
       .filter(s => s.vendor_name.trim())
       .map((s, i) => ({
@@ -227,8 +241,14 @@ export function Timesheets() {
         toll_amount: s.toll_amount ? parseFloat(s.toll_amount) : null,
         sort_order: i,
       }));
+
     if (stopsToInsert.length > 0) {
-      await supabase.from('timesheet_stops').insert(stopsToInsert);
+      const { error: insError } = await supabase.from('timesheet_stops').insert(stopsToInsert);
+      if (insError) {
+        setSaveError(`Failed to save stops: ${insError.message}`);
+        setSaving(false);
+        return;
+      }
     }
 
     await fetchTimesheets();
@@ -757,19 +777,27 @@ export function Timesheets() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex gap-3 px-6 pb-6">
-              <button type="button" onClick={closeEdit}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all">
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveEdit}
-                disabled={saving}
-                className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
-              >
-                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Changes</>}
-              </button>
+            <div className="px-6 pb-6 space-y-3">
+              {saveError && (
+                <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button type="button" onClick={closeEdit}
+                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  disabled={saving}
+                  className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Changes</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>
