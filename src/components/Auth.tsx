@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 
 const OFFICE_PASSWORD = '2210';
 const DRIVER_PASSWORD = '3814';
+const GEODIS_PASSWORD = '60152';
 
 function nameToEmail(name: string): string {
   const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -34,9 +35,10 @@ export function Auth() {
 
   const isDriverPassword = password === DRIVER_PASSWORD;
   const isOfficePassword = password === OFFICE_PASSWORD;
-  const isValidPassword = isDriverPassword || isOfficePassword;
+  const isGeodisPassword = password === GEODIS_PASSWORD;
+  const isValidPassword = isDriverPassword || isOfficePassword || isGeodisPassword;
 
-  const canSubmit = isValidPassword && (isOfficePassword || selectedDriver.length > 0);
+  const canSubmit = isValidPassword && (isOfficePassword || isGeodisPassword || selectedDriver.length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,8 @@ export function Auth() {
 
       if (isOfficePassword) {
         email = `office-admin@meiborg.local`;
+      } else if (isGeodisPassword) {
+        email = `geodis@meiborg.local`;
       } else if (isDriverPassword) {
         if (!selectedDriver) throw new Error('Please select your name');
         email = nameToEmail(selectedDriver);
@@ -103,7 +107,7 @@ export function Auth() {
                 required
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-all text-center text-lg tracking-widest"
                 placeholder="Enter password"
-                maxLength={4}
+                maxLength={5}
               />
             </div>
 

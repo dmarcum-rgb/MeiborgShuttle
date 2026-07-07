@@ -10,6 +10,7 @@ import { Stops } from './components/Stops';
 import { FuelReceipts } from './components/FuelReceipts';
 import { TollReceipts } from './components/TollReceipts';
 import { GeodisPreBilling } from './components/GeodisPreBilling';
+import { GeodisView } from './components/GeodisView';
 import { Timesheets } from './components/Timesheets';
 import { Reports } from './components/Reports';
 import { SystemErrors } from './components/SystemErrors';
@@ -19,6 +20,7 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   const isDriver = user?.email?.startsWith('driver-') ?? false;
+  const isGeodis = user?.email === 'geodis@meiborg.local';
 
   useEffect(() => {
     if (!user && !loading) {
@@ -43,6 +45,10 @@ function AppContent() {
 
   if (isDriver) {
     return <DriverDashboard />;
+  }
+
+  if (isGeodis) {
+    return <GeodisView />;
   }
 
   const renderPage = () => {
