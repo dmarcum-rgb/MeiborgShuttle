@@ -1,10 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileSpreadsheet, ChevronDown, MapPin, Clock, Coffee, ExternalLink } from 'lucide-react';
 import XLSX from 'xlsx-js-style';
 
 const HOURLY_RATE = 79.00;
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+type StopDetail = {
+  vendor: string;
+  city: string;
+  arrive: string;
+  depart: string;
+  delay: string;
+};
+
+type DayDetail = {
+  date: string;
+  start: string | null;
+  end: string | null;
+  lunchStart: string | null;
+  lunchEnd: string | null;
+  hours: number;
+  notes: string;
+  fuel: number;
+  stops: StopDetail[];
+  fuelReceiptUrls: string[];
+  tollReceiptUrls: string[];
+};
 
 type DriverRow = {
   driver_name: string;
@@ -17,6 +39,8 @@ type DriverRow = {
   endTimes: (string | null)[];
   fuelReceiptUrls: string[];
   tollReceiptUrls: string[];
+  days: (DayDetail | null)[];
+  stopCount: number;
 };
 
 type WeekData = {
@@ -74,7 +98,42 @@ function blankRow(name: string): DriverRow {
     tolls: 0,
     fuelReceiptUrls: [],
     tollReceiptUrls: [],
+    days: [null, null, null, null, null, null, null],
+    stopCount: 0,
   };
+}
+
+function lunchMinutes(ls: string | null, le: string | null): number {
+  if (!ls || !le) return 0;
+  const toMins = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  return Math.max(0, toMins(le) - toMins(ls));
+}
+
+// Supporting-data text shown when Geodis hovers a day's hours cell in the export
+function dayProof(day: DayDetail): string {
+  const lm = lunchMinutes(day.lunchStart, day.lunchEnd);
+  const lines: string[] = [];
+  lines.push(`Start: ${to12hr(day.start) || '—'}    End: ${to12hr(day.end) || '—'}`);
+  if (lm > 0) lines.push(`Lunch: ${lm} min deducted`);
+  lines.push(`Total: ${day.hours.toFixed(2)} hrs`);
+  if (day.fuel > 0) lines.push(`Fuel: $${day.fuel.toFixed(2)}${day.fuelReceiptUrls.length ? ' (receipt on file)' : ''}`);
+  if (day.stops.length > 0) {
+    lines.push('', `Stops (${day.stops.length}):`);
+    for (const s of day.stops) {
+      let l = `• ${s.vendor || '—'}`;
+      if (s.city) l += ` — ${s.city}`;
+      if (s.arrive || s.depart) l += ` (${to12hr(s.arrive) || '—'}–${to12hr(s.depart) || '—'})`;
+      if (s.delay) l += ` [delay: ${s.delay}]`;
+      lines.push(l);
+    }
+  } else {
+    lines.push('', 'No stops recorded');
+  }
+  if (day.notes) lines.push('', `Note: ${day.notes}`);
+  return lines.join('\n');
 }
 
 export function GeodisPreBilling() {
@@ -82,6 +141,7 @@ export function GeodisPreBilling() {
   const [weekStart, setWeekStart] = useState<Date>(() => getSundayWeekStart(new Date()));
   const [weekData, setWeekData] = useState<WeekData | null>(null);
   const [allDriverNames, setAllDriverNames] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     loadAllDrivers();
@@ -121,7 +181,7 @@ export function GeodisPreBilling() {
 
     const { data } = await supabase
       .from('timesheets')
-      .select('id, driver_name, vehicle_number, work_date, start_time, end_time, total_hours, fuel_dollars, toll_total')
+      .select('id, driver_name, vehicle_number, work_date, start_time, end_time, total_hours, lunch_start, lunch_end, notes, fuel_dollars, toll_total')
       .gte('work_date', startStr)
       .lte('work_date', endStr)
       .eq('status', 'approved')
@@ -130,14 +190,33 @@ export function GeodisPreBilling() {
     // Fetch receipt images for all timesheets in this week
     const timesheetIds = (data ?? []).map((ts: any) => ts.id);
     const receiptImagesByTs = new Map<string, { receipt_type: string; storage_path: string }[]>();
+    // Stops (suppliers visited) for all timesheets in this week — the audit backup Geodis needs
+    const stopsByTs = new Map<string, StopDetail[]>();
     if (timesheetIds.length > 0) {
-      const { data: images } = await supabase
-        .from('receipt_images')
-        .select('timesheet_id, receipt_type, storage_path')
-        .in('timesheet_id', timesheetIds);
+      const [{ data: images }, { data: stops }] = await Promise.all([
+        supabase
+          .from('receipt_images')
+          .select('timesheet_id, receipt_type, storage_path')
+          .in('timesheet_id', timesheetIds),
+        supabase
+          .from('timesheet_stops')
+          .select('timesheet_id, vendor_name, city_address, arrive_time, departure_time, delay_reason, sort_order')
+          .in('timesheet_id', timesheetIds)
+          .order('sort_order', { ascending: true }),
+      ]);
       for (const img of images ?? []) {
         if (!receiptImagesByTs.has(img.timesheet_id)) receiptImagesByTs.set(img.timesheet_id, []);
         receiptImagesByTs.get(img.timesheet_id)!.push(img);
+      }
+      for (const s of stops ?? []) {
+        if (!stopsByTs.has(s.timesheet_id)) stopsByTs.set(s.timesheet_id, []);
+        stopsByTs.get(s.timesheet_id)!.push({
+          vendor: s.vendor_name ?? '',
+          city: s.city_address ?? '',
+          arrive: s.arrive_time ?? '',
+          depart: s.departure_time ?? '',
+          delay: s.delay_reason ?? '',
+        });
       }
     }
 
@@ -165,17 +244,37 @@ export function GeodisPreBilling() {
       row.startTimes[dayIdx] = ts.start_time;
       row.endTimes[dayIdx] = ts.end_time;
 
+      const stops = stopsByTs.get(ts.id) ?? [];
+      row.stopCount += stops.length;
+
       // Attach receipt image signed URLs (bucket is private, signed URLs expire in 1 hour)
+      const dayFuelUrls: string[] = [];
+      const dayTollUrls: string[] = [];
       const imgs = receiptImagesByTs.get(ts.id) ?? [];
       for (const img of imgs) {
         const { data: urlData } = await supabase.storage
           .from('receipts')
           .createSignedUrl(img.storage_path, 3600);
         if (urlData?.signedUrl) {
-          if (img.receipt_type === 'fuel') row.fuelReceiptUrls.push(urlData.signedUrl);
-          else if (img.receipt_type === 'toll') row.tollReceiptUrls.push(urlData.signedUrl);
+          if (img.receipt_type === 'fuel') { row.fuelReceiptUrls.push(urlData.signedUrl); dayFuelUrls.push(urlData.signedUrl); }
+          else if (img.receipt_type === 'toll') { row.tollReceiptUrls.push(urlData.signedUrl); dayTollUrls.push(urlData.signedUrl); }
         }
       }
+
+      // Per-day detail powers the drill-down and the Excel proof-on-hover comments
+      row.days[dayIdx] = {
+        date: ts.work_date,
+        start: ts.start_time || null,
+        end: ts.end_time || null,
+        lunchStart: ts.lunch_start || null,
+        lunchEnd: ts.lunch_end || null,
+        hours: Number(ts.total_hours),
+        notes: ts.notes ?? '',
+        fuel: Number(ts.fuel_dollars ?? 0),
+        stops,
+        fuelReceiptUrls: dayFuelUrls,
+        tollReceiptUrls: dayTollUrls,
+      };
     }
 
     const drivers = Array.from(map.values()).sort((a, b) => a.driver_name.localeCompare(b.driver_name));
@@ -303,7 +402,7 @@ export function GeodisPreBilling() {
 
     // ── Row 2: Billing period ─────────────────────────────────────────────────
     ws[XLSX.utils.encode_cell({ r: row - 1, c: 0 })] = {
-      v: `Week Ending: ${fmt(weekData.weekEnd)}   |   Bill To: Logisnext / Geodis, Houston Production, 240 N Prospect St, Marengo IL 60152 — Attn: Damon Gobble   |   From: Meiborg, 2210 Harrison Ave, Rockford, IL 61104`,
+      v: `Week Ending: ${fmt(weekData.weekEnd)}   |   Bill To: Logisnext / Geodis, Houston Production, 240 N Prospect St, Marengo IL 60152 — Attn: Kimberly Rote   |   From: Meiborg, 2210 Harrison Ave, Rockford, IL 61104`,
       t: 's',
       s: subHeaderStyle,
     };
@@ -329,7 +428,7 @@ export function GeodisPreBilling() {
     weekData.drivers.forEach((d, i) => {
       const even = i % 2 === 0;
       const lineTotal = d.totalHours * HOURLY_RATE;
-      const cols: { v: string | number; t: 's' | 'n'; s: object; l?: object }[] = [
+      const cols: { v: string | number; t: 's' | 'n'; s: object; l?: object; c?: any }[] = [
         { v: `40 hr – Shuttle Driver ${i + 1}`, t: 's', s: dataRowLeftStyle(even) },
         { v: d.driver_name, t: 's', s: { ...dataRowLeftStyle(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 } } },
         { v: d.vehicle_number || '—', t: 's', s: dataRowStyles(even) },
@@ -371,11 +470,20 @@ export function GeodisPreBilling() {
             },
           } : {}),
         },
-        ...d.dailyHours.map(h => ({
-          v: h != null ? h : '',
-          t: h != null ? 'n' as const : 's' as const,
-          s: { ...dataRowStyles(even), numFmt: h != null ? '0.00' : undefined },
-        })),
+        ...d.days.map((day, di) => {
+          const h = d.dailyHours[di];
+          const cellObj: { v: string | number; t: 's' | 'n'; s: object; c?: any } = {
+            v: h != null ? h : '',
+            t: h != null ? 'n' as const : 's' as const,
+            s: { ...dataRowStyles(even), numFmt: h != null ? '0.00' : undefined },
+          };
+          if (day) {
+            const c: any = [{ a: 'Meiborg', t: dayProof(day) }];
+            c.hidden = true; // show on hover, not always
+            cellObj.c = c;
+          }
+          return cellObj;
+        }),
         { v: d.totalHours > 0 ? d.totalHours : '', t: d.totalHours > 0 ? 'n' : 's', s: { ...dataRowStyles(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 }, numFmt: '0.00' } },
         { v: HOURLY_RATE, t: 'n', s: { ...moneyStyle(even), numFmt: '$#,##0.00' } },
         { v: lineTotal > 0 ? lineTotal : '', t: lineTotal > 0 ? 'n' : 's', s: { ...moneyStyle(even), font: { bold: true, color: { rgb: '111827' }, sz: 10 }, numFmt: '$#,##0.00' } },
@@ -452,6 +560,45 @@ export function GeodisPreBilling() {
 
     XLSX.utils.book_append_sheet(wb, ws, 'Pre-Billing');
 
+    // ── Stops Detail sheet — pull-anytime audit backup of where every driver went ──
+    const stopRows: (string | number)[][] = [[
+      'Date', 'Driver', 'Truck #', 'Supplier / Vendor', 'City / Address', 'Arrive', 'Depart', 'Day Hours', 'Delay Reason',
+    ]];
+    for (const d of weekData.drivers) {
+      d.days.forEach((day) => {
+        if (!day || day.stops.length === 0) return;
+        const dateStr = new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+        day.stops.forEach((s, si) => {
+          stopRows.push([
+            si === 0 ? dateStr : '',
+            si === 0 ? d.driver_name : '',
+            si === 0 ? (d.vehicle_number || '—') : '',
+            s.vendor || '',
+            s.city || '',
+            to12hr(s.arrive),
+            to12hr(s.depart),
+            si === 0 ? day.hours : '',
+            s.delay || '',
+          ]);
+        });
+      });
+    }
+    const wsStops = XLSX.utils.aoa_to_sheet(stopRows);
+    wsStops['!cols'] = [
+      { wch: 12 }, { wch: 20 }, { wch: 9 }, { wch: 28 }, { wch: 28 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 26 },
+    ];
+    const stopHdrStyle = {
+      fill: { fgColor: { rgb: '1F2937' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: thinBorder,
+    };
+    for (let c = 0; c < 9; c++) {
+      const ref = XLSX.utils.encode_cell({ r: 0, c });
+      if (wsStops[ref]) (wsStops[ref] as any).s = stopHdrStyle;
+    }
+    XLSX.utils.book_append_sheet(wb, wsStops, 'Stops Detail');
+
     const weekStr = weekData.weekStart.toISOString().split('T')[0];
     XLSX.writeFile(wb, `Geodis_Billing_${weekStr}.xlsx`);
   };
@@ -461,13 +608,13 @@ export function GeodisPreBilling() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 font-serif">Geodis Pre-Billing</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Weekly billing preview — approved timesheets only · $79.00/hr</p>
+          <h1 className="text-3xl font-light text-mist tracking-tight">Geodis Pre-Billing</h1>
+          <p className="text-faint text-sm mt-0.5">Weekly billing preview — approved timesheets only · $79.00/hr</p>
         </div>
         <button
           onClick={exportToExcel}
           disabled={!weekData}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-all"
+          className="gbtn-ghost flex items-center gap-2 px-3 py-2 text-sm disabled:opacity-40"
         >
           <FileSpreadsheet className="w-4 h-4" />
           Export to Excel
@@ -476,40 +623,40 @@ export function GeodisPreBilling() {
 
       {/* Week navigator */}
       <div className="flex items-center gap-3">
-        <button onClick={prevWeek} className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition-all">
+        <button onClick={prevWeek} className="p-2 rounded-lg border border-edge text-faint hover:bg-glass2 transition-all">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-800 min-w-[220px] text-center">
+        <div className="px-4 py-2 card rounded-lg text-sm font-medium text-mist min-w-[220px] text-center">
           Week of {weekLabel(weekStart)}
         </div>
-        <button onClick={nextWeek} className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition-all">
+        <button onClick={nextWeek} className="p-2 rounded-lg border border-edge text-faint hover:bg-glass2 transition-all">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-edge border-t-signal rounded-full animate-spin" />
         </div>
       ) : weekData && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="card overflow-hidden">
           {/* Company header */}
-          <div className="bg-gray-900 text-white px-6 py-4 flex items-start justify-between">
+          <div className="bg-[#1b1f27] text-mist px-6 py-4 flex items-start justify-between border-b border-edge">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">Bill To</p>
+              <p className="text-xs text-faint uppercase tracking-widest mb-0.5">Bill To</p>
               <p className="font-semibold text-lg">Logisnext / Geodis</p>
-              <p className="text-gray-300 text-sm">Houston Production</p>
-              <p className="text-gray-300 text-sm">240 N Prospect St</p>
-              <p className="text-gray-400 text-xs">Marengo, IL 60152</p>
-              <p className="text-gray-400 text-xs mt-0.5">Attn: Damon Gobble</p>
+              <p className="text-dim text-sm">Houston Production</p>
+              <p className="text-dim text-sm">240 N Prospect St</p>
+              <p className="text-faint text-xs">Marengo, IL 60152</p>
+              <p className="text-faint text-xs mt-0.5">Attn: Kimberly Rote</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">From</p>
+              <p className="text-xs text-faint uppercase tracking-widest mb-0.5">From</p>
               <p className="font-semibold">Meiborg</p>
-              <p className="text-gray-300 text-sm">2210 Harrison Ave</p>
-              <p className="text-gray-400 text-xs">Rockford, IL 61104</p>
-              <p className="text-gray-300 text-sm mt-2">
-                <span className="text-gray-400">Week Ending: </span>
+              <p className="text-dim text-sm">2210 Harrison Ave</p>
+              <p className="text-faint text-xs">Rockford, IL 61104</p>
+              <p className="text-dim text-sm mt-2">
+                <span className="text-faint">Week Ending: </span>
                 {fmt(weekData.weekEnd)}
               </p>
             </div>
@@ -519,92 +666,161 @@ export function GeodisPreBilling() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-100 border-b border-gray-300">
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Rate Schedule</th>
-                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Driver / Truck #</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Fuel</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Tolls</th>
+                <tr className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider whitespace-nowrap">Rate Schedule</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider whitespace-nowrap">Driver / Truck #</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Fuel</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Tolls</th>
                   {DAYS.map(d => (
-                    <th key={d} className="text-center px-2 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">{d}</th>
+                    <th key={d} className="text-center px-2 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider w-20">{d}</th>
                   ))}
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Reg Hrs</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Rate</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider whitespace-nowrap">Reg Hrs</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Rate</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-edge">
                 {weekData.drivers.map((driver, i) => {
                   const lineTotal = driver.totalHours * HOURLY_RATE;
                   const hasData = driver.totalHours > 0 || driver.fuel > 0 || driver.tolls > 0;
+                  const isOpen = expanded === driver.driver_name;
+                  const workedDays = driver.days.filter(Boolean) as DayDetail[];
                   return (
-                    <tr key={driver.driver_name} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                      <td className="px-4 py-3 text-xs text-gray-500 font-medium whitespace-nowrap">
-                        40 hr – Shuttle Driver {i + 1}
+                    <Fragment key={driver.driver_name}>
+                    <tr
+                      className={`${i % 2 === 0 ? '' : 'bg-glass2'} ${hasData ? 'cursor-pointer hover:bg-glass2' : ''} ${isOpen ? 'bg-glass2' : ''}`}
+                      onClick={hasData ? () => setExpanded(isOpen ? null : driver.driver_name) : undefined}
+                    >
+                      <td className="px-4 py-3 text-xs text-faint font-medium whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5">
+                          {hasData && <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? '' : '-rotate-90'}`} />}
+                          40 hr – Shuttle Driver {i + 1}
+                        </span>
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
-                        <p className={`font-medium ${hasData ? 'text-gray-900' : 'text-gray-500'}`}>{driver.driver_name}</p>
-                        {driver.vehicle_number && (
-                          <p className="text-xs text-gray-400">Truck #{driver.vehicle_number}</p>
-                        )}
+                        <p className={`font-medium ${hasData ? 'text-mist' : 'text-faint'}`}>{driver.driver_name}</p>
+                        <div className="flex items-center gap-2">
+                          {driver.vehicle_number && (
+                            <p className="text-xs text-faint">Truck #{driver.vehicle_number}</p>
+                          )}
+                          {driver.stopCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-signal">
+                              <MapPin className="w-3 h-3" />{driver.stopCount} stop{driver.stopCount === 1 ? '' : 's'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-3 text-right text-xs whitespace-nowrap">
                         {driver.fuel > 0
-                          ? <span className="text-gray-700">($${driver.fuel.toFixed(2)})</span>
-                          : <span className="text-gray-300">($ —)</span>}
+                          ? <span className="text-dim">($${driver.fuel.toFixed(2)})</span>
+                          : <span className="text-faint">($ —)</span>}
                       </td>
                       <td className="px-3 py-3 text-right text-xs whitespace-nowrap">
                         {driver.tolls > 0
-                          ? <span className="text-gray-700">($${driver.tolls.toFixed(2)})</span>
-                          : <span className="text-gray-300">($ —)</span>}
+                          ? <span className="text-dim">($${driver.tolls.toFixed(2)})</span>
+                          : <span className="text-faint">($ —)</span>}
                       </td>
                       {driver.dailyHours.map((h, di) => (
                         <td key={di} className="px-2 py-3 text-center align-top">
                           {h != null ? (
                             <div>
-                              <p className="text-gray-900 font-semibold text-sm">{h.toFixed(2)}</p>
+                              <p className="text-mist font-semibold text-sm">{h.toFixed(2)}</p>
                               {driver.startTimes[di] && (
-                                <p className="text-gray-400 leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.startTimes[di])}</p>
+                                <p className="text-faint leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.startTimes[di])}</p>
                               )}
                               {driver.endTimes[di] && (
-                                <p className="text-gray-400 leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.endTimes[di])}</p>
+                                <p className="text-faint leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.endTimes[di])}</p>
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-200 text-xs">—</span>
+                            <span className="text-faint text-xs">—</span>
                           )}
                         </td>
                       ))}
                       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
                         {hasData
-                          ? <span className="text-gray-900">{driver.totalHours.toFixed(2)}</span>
-                          : <span className="text-gray-300">0.00</span>}
+                          ? <span className="text-mist">{driver.totalHours.toFixed(2)}</span>
+                          : <span className="text-faint">0.00</span>}
                       </td>
-                      <td className="px-3 py-3 text-right text-gray-500 text-xs whitespace-nowrap">
+                      <td className="px-3 py-3 text-right text-faint text-xs whitespace-nowrap">
                         ${HOURLY_RATE.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {hasData
-                          ? <span className="text-gray-900">${lineTotal.toFixed(2)}</span>
-                          : <span className="text-gray-300">$0.00</span>}
+                          ? <span className="text-mist">${lineTotal.toFixed(2)}</span>
+                          : <span className="text-faint">$0.00</span>}
                       </td>
                     </tr>
+                    {isOpen && (
+                      <tr className="bg-[#14171d]">
+                        <td colSpan={14} className="px-4 py-4 border-b border-edge2">
+                          <p className="text-xs uppercase tracking-widest text-faint mb-3">
+                            {driver.driver_name} · daily detail — hours, lunch, and stops
+                          </p>
+                          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {workedDays.map((day, di) => {
+                              const lm = lunchMinutes(day.lunchStart, day.lunchEnd);
+                              const dateObj = new Date(day.date + 'T12:00:00');
+                              return (
+                                <div key={di} className="rounded-xl border border-edge bg-glass2 p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-mist text-sm font-semibold">
+                                      {dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                                    </p>
+                                    <span className="text-signal text-sm font-semibold">{day.hours.toFixed(2)} hrs</span>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mb-2">
+                                    <span className="inline-flex items-center gap-1 text-dim"><Clock className="w-3 h-3 text-faint" />{to12hr(day.start) || '—'} – {to12hr(day.end) || '—'}</span>
+                                    {lm > 0 && <span className="inline-flex items-center gap-1 text-faint"><Coffee className="w-3 h-3" />{lm} min lunch deducted</span>}
+                                    {day.fuel > 0 && (
+                                      day.fuelReceiptUrls[0]
+                                        ? <a href={day.fuelReceiptUrls[0]} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 text-signal hover:underline">Fuel (${day.fuel.toFixed(2)}) <ExternalLink className="w-3 h-3" /></a>
+                                        : <span className="text-faint">Fuel (${day.fuel.toFixed(2)})</span>
+                                    )}
+                                  </div>
+                                  {day.stops.length > 0 ? (
+                                    <ul className="space-y-1">
+                                      {day.stops.map((s, si) => (
+                                        <li key={si} className="flex items-start gap-2 text-xs">
+                                          <MapPin className="w-3 h-3 text-faint mt-0.5 flex-shrink-0" />
+                                          <span className="text-dim">
+                                            <span className="text-mist font-medium">{s.vendor || '—'}</span>
+                                            {s.city && <span className="text-faint"> · {s.city}</span>}
+                                            {(s.arrive || s.depart) && <span className="text-faint"> · {to12hr(s.arrive) || '—'}–{to12hr(s.depart) || '—'}</span>}
+                                            {s.delay && <span className="text-bad"> · delay: {s.delay}</span>}
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-faint text-xs">No stops recorded</p>
+                                  )}
+                                  {day.notes && <p className="text-faint text-xs mt-2 italic">Note: {day.notes}</p>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-100 border-t-2 border-gray-300">
-                  <td colSpan={4} className="px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <tr className="bg-glass2 border-t-2 border-edge2">
+                  <td colSpan={4} className="px-4 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">
                     Daily Totals
                   </td>
                   {DAYS.map((_, di) => {
                     const dayTotal = weekData.drivers.reduce((s, d) => s + (d.dailyHours[di] ?? 0), 0);
                     return (
-                      <td key={di} className="px-2 py-2.5 text-center text-sm font-semibold text-gray-800">
-                        {dayTotal > 0 ? dayTotal.toFixed(2) : <span className="text-gray-300">—</span>}
+                      <td key={di} className="px-2 py-2.5 text-center text-sm font-semibold text-dim">
+                        {dayTotal > 0 ? dayTotal.toFixed(2) : <span className="text-faint">—</span>}
                       </td>
                     );
                   })}
-                  <td className="px-3 py-2.5 text-right font-bold text-gray-900">
+                  <td className="px-3 py-2.5 text-right font-bold text-mist">
                     {weekData.drivers.reduce((s, d) => s + d.totalHours, 0).toFixed(2)}
                   </td>
                   <td />
@@ -615,25 +831,25 @@ export function GeodisPreBilling() {
           </div>
 
           {/* Summary */}
-          <div className="border-t border-gray-200 px-6 py-5 flex justify-end">
+          <div className="border-t border-edge px-6 py-5 flex justify-end">
             <div className="w-72 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-dim">
                 <span>Subtotal (labor)</span>
-                <span className="font-medium text-gray-900">${weekData.subtotal.toFixed(2)}</span>
+                <span className="font-medium text-mist">${weekData.subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-dim">
                 <span>Fuel</span>
-                <span className="font-medium text-gray-700">
-                  {weekData.totalFuel > 0 ? `($${weekData.totalFuel.toFixed(2)})` : <span className="text-gray-400">($ —)</span>}
+                <span className="font-medium text-dim">
+                  {weekData.totalFuel > 0 ? `($${weekData.totalFuel.toFixed(2)})` : <span className="text-faint">($ —)</span>}
                 </span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-dim">
                 <span>Tolls</span>
-                <span className="font-medium text-gray-700">
-                  {weekData.totalTolls > 0 ? `($${weekData.totalTolls.toFixed(2)})` : <span className="text-gray-400">($ —)</span>}
+                <span className="font-medium text-dim">
+                  {weekData.totalTolls > 0 ? `($${weekData.totalTolls.toFixed(2)})` : <span className="text-faint">($ —)</span>}
                 </span>
               </div>
-              <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-300 pt-2">
+              <div className="flex justify-between text-lg font-light text-mist border-t border-edge2 pt-2">
                 <span>Total</span>
                 <span>${weekData.grandTotal.toFixed(2)}</span>
               </div>

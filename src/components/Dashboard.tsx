@@ -108,27 +108,27 @@ export function Dashboard() {
   const urgency = countdown.days === 0 && countdown.hours < 12;
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-2 sm:p-4 space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900 font-serif">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Weekly operations at a glance</p>
+        <h1 className="text-3xl font-light text-mist tracking-tight">Dashboard</h1>
+        <p className="text-faint mt-1">Weekly operations at a glance</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Timesheets to approve */}
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-          <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="card overflow-hidden flex flex-col">
+          <div className="px-6 py-5 border-b border-edge flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pending.length > 0 ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                <Clock className={`w-5 h-5 ${pending.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pending.length > 0 ? 'bg-signal-dim' : 'bg-glass2'}`}>
+                <Clock className={`w-5 h-5 ${pending.length > 0 ? 'text-signal' : 'text-faint'}`} />
               </div>
               <div>
-                <h2 className="text-gray-900 font-semibold">Timesheets to Approve</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{approvedCount} approved this week</p>
+                <h2 className="text-mist font-semibold">Timesheets to Approve</h2>
+                <p className="text-xs text-faint mt-0.5">{approvedCount} approved this week</p>
               </div>
             </div>
             {pending.length > 0 && (
-              <span className="flex items-center justify-center w-7 h-7 bg-blue-600 text-white text-sm font-semibold rounded-full">
+              <span className="flex items-center justify-center w-7 h-7 bg-signal text-[#1a1205] text-sm font-semibold rounded-full">
                 {pending.length}
               </span>
             )}
@@ -137,38 +137,38 @@ export function Dashboard() {
           <div className="flex-1">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-700 rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-edge border-t-signal rounded-full animate-spin" />
               </div>
             ) : pending.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <CheckCircle className="w-10 h-10 mb-3 text-green-400" />
-                <p className="font-medium text-gray-600">All caught up</p>
+              <div className="flex flex-col items-center justify-center py-12 text-faint">
+                <CheckCircle className="w-10 h-10 mb-3 text-ok" />
+                <p className="font-medium text-dim">All caught up</p>
                 <p className="text-sm mt-1">No timesheets waiting for approval</p>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-50">
+              <ul className="divide-y divide-edge">
                 {pending.map(ts => (
-                  <li key={ts.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <li key={ts.id} className="flex items-center gap-4 px-6 py-4 hover:bg-glass2 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900 text-sm">{ts.driver_name || 'Unknown Driver'}</p>
-                        <span className="text-xs text-gray-400">Truck #{ts.vehicle_number}</span>
+                        <p className="font-semibold text-mist text-sm">{ts.driver_name || 'Unknown Driver'}</p>
+                        <span className="text-xs text-faint">Truck #{ts.vehicle_number}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs text-gray-500">{formatDate(ts.work_date)}</p>
-                        <span className="text-gray-300">·</span>
-                        <p className="text-xs font-medium text-gray-700">{ts.total_hours.toFixed(2)} hrs</p>
+                        <p className="text-xs text-faint">{formatDate(ts.work_date)}</p>
+                        <span className="text-faint/60">·</span>
+                        <p className="text-xs font-medium text-dim">{ts.total_hours.toFixed(2)} hrs</p>
                         {ts.submitted_at && (
                           <>
-                            <span className="text-gray-300">·</span>
-                            <p className="text-xs text-gray-400">{timeSince(ts.submitted_at)}</p>
+                            <span className="text-faint/60">·</span>
+                            <p className="text-xs text-faint">{timeSince(ts.submitted_at)}</p>
                           </>
                         )}
                       </div>
                     </div>
                     <button
                       onClick={() => approveTimesheet(ts.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-all flex-shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-[#1a1205] bg-ok hover:brightness-105 text-xs font-semibold rounded-lg transition-all flex-shrink-0"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
                       Approve
@@ -180,8 +180,8 @@ export function Dashboard() {
           </div>
 
           {pending.length > 0 && (
-            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
-              <a href="#timesheets" className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1 transition-colors">
+            <div className="px-6 py-3 border-t border-edge bg-glass2">
+              <a href="#timesheets" className="text-xs text-faint hover:text-mist flex items-center gap-1 transition-colors">
                 View all in Timesheets tab <ChevronRight className="w-3 h-3" />
               </a>
             </div>
@@ -189,17 +189,17 @@ export function Dashboard() {
         </div>
 
         {/* Billing countdown */}
-        <div className={`rounded-2xl shadow-sm overflow-hidden flex flex-col border ${urgency ? 'border-red-200 bg-red-50' : 'bg-white border-gray-200'}`}>
-          <div className={`px-6 py-5 border-b flex items-center gap-3 ${urgency ? 'border-red-200' : 'border-gray-100'}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${urgency ? 'bg-red-100' : 'bg-gray-50'}`}>
+        <div className={`card overflow-hidden flex flex-col ${urgency ? 'border-[rgba(255,107,107,0.4)]' : ''}`}>
+          <div className={`px-6 py-5 border-b flex items-center gap-3 ${urgency ? 'border-[rgba(255,107,107,0.3)]' : 'border-edge'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${urgency ? 'bg-[rgba(255,107,107,0.15)]' : 'bg-glass2'}`}>
               {urgency
-                ? <AlertCircle className="w-5 h-5 text-red-600" />
-                : <CalendarClock className="w-5 h-5 text-gray-600" />
+                ? <AlertCircle className="w-5 h-5 text-bad" />
+                : <CalendarClock className="w-5 h-5 text-dim" />
               }
             </div>
             <div>
-              <h2 className={`font-semibold ${urgency ? 'text-red-800' : 'text-gray-900'}`}>Geodis Billing Deadline</h2>
-              <p className={`text-xs mt-0.5 ${urgency ? 'text-red-500' : 'text-gray-400'}`}>
+              <h2 className={`font-semibold ${urgency ? 'text-bad' : 'text-mist'}`}>Geodis Billing Deadline</h2>
+              <p className={`text-xs mt-0.5 ${urgency ? 'text-bad/80' : 'text-faint'}`}>
                 Every Monday — Pre-billing due to Geodis
               </p>
             </div>
@@ -215,31 +215,31 @@ export function Dashboard() {
                 { value: countdown.secs, label: 'Sec' },
               ].map(({ value, label }, i) => (
                 <div key={label} className="flex items-end gap-3">
-                  {i > 0 && <span className={`text-2xl font-light mb-3 ${urgency ? 'text-red-400' : 'text-gray-300'}`}>:</span>}
+                  {i > 0 && <span className={`text-2xl font-light mb-3 ${urgency ? 'text-bad/50' : 'text-faint/50'}`}>:</span>}
                   <div className="flex flex-col items-center">
-                    <div className={`w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold tabular-nums shadow-sm ${
-                      urgency ? 'bg-red-600 text-white' : 'bg-gray-900 text-white'
+                    <div className={`w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold tabular-nums ${
+                      urgency ? 'bg-bad text-white' : 'bg-signal text-[#1a1205] shadow-[0_6px_22px_rgba(255,201,60,0.28)]'
                     }`}>
                       {pad2(value)}
                     </div>
-                    <span className={`text-xs mt-1.5 font-medium ${urgency ? 'text-red-500' : 'text-gray-400'}`}>{label}</span>
+                    <span className={`text-xs mt-1.5 font-medium ${urgency ? 'text-bad/80' : 'text-faint'}`}>{label}</span>
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="text-center">
-              <p className={`text-sm font-medium ${urgency ? 'text-red-700' : 'text-gray-700'}`}>
+              <p className={`text-sm font-medium ${urgency ? 'text-bad' : 'text-dim'}`}>
                 Next billing: {nextMonday.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
               {urgency && (
-                <p className="text-xs text-red-500 mt-1 font-medium">Billing due soon — submit Pre-Billing now</p>
+                <p className="text-xs text-bad/80 mt-1 font-medium">Billing due soon — submit Pre-Billing now</p>
               )}
               {!urgency && pending.length > 0 && (
-                <p className="text-xs text-amber-600 mt-1 font-medium">{pending.length} timesheet{pending.length > 1 ? 's' : ''} still need approval before billing</p>
+                <p className="text-xs text-signal mt-1 font-medium">{pending.length} timesheet{pending.length > 1 ? 's' : ''} still need approval before billing</p>
               )}
               {!urgency && pending.length === 0 && (
-                <p className="text-xs text-green-600 mt-1 font-medium">All timesheets approved — ready to bill</p>
+                <p className="text-xs text-ok mt-1 font-medium">All timesheets approved — ready to bill</p>
               )}
             </div>
           </div>

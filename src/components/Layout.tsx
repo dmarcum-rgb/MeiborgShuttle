@@ -60,25 +60,25 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     return () => { supabase.removeChannel(channel); };
   }, [role]);
 
+  const displayName = user?.email?.split('@')[0] ?? '';
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center shadow-lg shadow-gray-900/20">
-              <img src="/image copy.png" alt="Logo" className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-white font-semibold text-lg font-serif">Meiborg Shuttles</h1>
-              <p className="text-gray-400 text-xs">Fleet Management</p>
-            </div>
+    <div className="min-h-screen flex flex-col lg:flex-row gap-4 p-3 sm:p-4">
+      {/* Left rail */}
+      <aside className="rail lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] w-full lg:w-[212px] flex-shrink-0 flex flex-col p-3">
+        {/* Brand */}
+        <div className="flex items-center gap-3 px-2 py-2 mb-2">
+          <img src="/logo.png" alt="Meiborg Shuttles" className="w-10 h-10 rounded-xl object-contain" />
+          <div className="leading-tight">
+            <h1 className="text-mist text-[15px] font-light tracking-tight">
+              Meiborg <span className="font-semibold">Shuttles</span>
+            </h1>
+            <p className="text-faint text-[11px]">Fleet Management</p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 flex flex-row flex-wrap lg:flex-col gap-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
@@ -86,16 +86,18 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-full text-[13px] font-medium transition-all ${
                   isActive
-                    ? 'bg-gray-700 text-white shadow-lg'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    ? 'bg-signal text-[#1a1205] shadow-[0_4px_16px_rgba(255,201,60,0.3)]'
+                    : 'text-dim hover:text-mist hover:bg-glass2'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="flex-1 text-left">{item.label}</span>
+                <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                <span className="flex-1 text-left hidden sm:inline">{item.label}</span>
                 {item.id === 'errors' && openErrorCount > 0 && (
-                  <span className="flex items-center justify-center min-w-5 h-5 px-1.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                  <span className={`flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-bold rounded-full ${
+                    isActive ? 'bg-[#1a1205]/20 text-[#1a1205]' : 'bg-bad text-white'
+                  }`}>
                     {openErrorCount > 99 ? '99+' : openErrorCount}
                   </span>
                 )}
@@ -104,36 +106,32 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           })}
         </nav>
 
-        {/* User info */}
-        <div className="p-4 border-t border-gray-800">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user?.email?.charAt(0).toUpperCase()}
+        {/* User */}
+        <div className="mt-2 pt-3 border-t border-edge">
+          <div className="flex items-center gap-3 px-1 mb-2">
+            <div className="w-9 h-9 rounded-full bg-glass2 border border-edge flex items-center justify-center flex-shrink-0">
+              <span className="text-mist text-sm font-medium">
+                {displayName.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">
-                {user?.email}
-              </p>
-              <p className="text-gray-400 text-xs">
-                {role === 'office' ? 'Office' : 'Driver'}
-              </p>
+              <p className="text-mist text-[13px] font-medium truncate">{displayName}</p>
+              <p className="text-faint text-[11px]">{role === 'office' ? 'Office' : 'Driver'}</p>
             </div>
             {role === 'office' && <NotificationBell />}
           </div>
           <button
             onClick={signOut}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-full text-[13px] font-medium text-dim hover:text-mist hover:bg-glass2 transition-all"
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
+            <LogOut className="w-[18px] h-[18px]" />
+            <span className="hidden sm:inline">Sign Out</span>
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="pl-64">
+      <main className="flex-1 min-w-0">
         {children}
       </main>
 

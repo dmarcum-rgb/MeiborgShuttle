@@ -158,17 +158,17 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
   const isClockedIn = status === 'clocked_in';
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
       <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-gray-500" />
+          <Clock className="w-4 h-4 text-faint" />
           {isClockedIn ? (
             <div>
-              <span className="text-xs text-gray-500 uppercase tracking-wider">Clocked In</span>
-              {elapsed && <span className="ml-2 text-sm font-mono font-medium text-gray-900">{elapsed}</span>}
+              <span className="text-xs text-faint uppercase tracking-wider">Clocked In</span>
+              {elapsed && <span className="ml-2 text-sm font-mono font-medium text-mist">{elapsed}</span>}
             </div>
           ) : (
-            <span className="text-sm text-gray-500">Not clocked in</span>
+            <span className="text-sm text-faint">Not clocked in</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -177,8 +177,8 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
             disabled={toggling}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               isClockedIn
-                ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
-                : 'bg-gray-900 text-white hover:bg-gray-800'
+                ? 'bg-[rgba(255,107,107,0.1)] text-bad hover:brightness-110 border border-[rgba(255,107,107,0.35)]'
+                : 'gbtn'
             }`}
           >
             {toggling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : isClockedIn ? <LogOut className="w-3.5 h-3.5" /> : <LogIn className="w-3.5 h-3.5" />}
@@ -187,15 +187,15 @@ function ClockBar({ userId, onClockOut, onSignOut, onStatusChange }: ClockBarPro
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg text-faint hover:bg-glass2 transition-colors"
             >
               {menuOpen ? <XIcon className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-40 bg-[#1b1f27] border border-edge2 rounded-xl shadow-lg z-50 overflow-hidden">
                 <button
                   onClick={() => { setMenuOpen(false); onSignOut(); }}
-                  className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                  className="w-full px-4 py-3 text-left text-sm text-bad hover:bg-glass2 flex items-center gap-2 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out
@@ -473,36 +473,36 @@ export function DriverDashboard() {
   // ─── ARRIVED SCREEN ───────────────────────────────────────────────────────────
   if (routeState === 'arrived' && arrivedVendor) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-14">
+      <div className="min-h-screen pt-14">
         <ClockBar userId={user?.id} onClockOut={handleClockOut} onSignOut={handleSignOut} onStatusChange={setClockedIn} />
 
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px)] p-6">
           <div className="w-full max-w-lg">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="bg-gray-900 px-6 py-5 flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-green-400" />
+            <div className="card overflow-hidden">
+              <div className="bg-[#1b1f27] px-6 py-5 flex items-center gap-3 border-b border-edge">
+                <CheckCircle className="w-6 h-6 text-ok" />
                 <div>
-                  <span className="text-green-400 text-sm font-medium uppercase tracking-widest block">Arrived</span>
-                  <h2 className="text-2xl font-semibold text-white font-serif">{arrivedVendor.name}</h2>
+                  <span className="text-ok text-sm font-medium uppercase tracking-widest block">Arrived</span>
+                  <h2 className="text-2xl font-light tracking-tight text-mist">{arrivedVendor.name}</h2>
                 </div>
               </div>
               <div className="p-6 space-y-4">
-                <p className="text-gray-600">Your arrival has been automatically logged.</p>
+                <p className="text-dim">Your arrival has been automatically logged.</p>
                 {arrivedVendor.toll !== null && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Toll Amount</p>
-                    <p className="text-2xl font-semibold text-gray-900">${arrivedVendor.toll.toFixed(2)}</p>
+                  <div className="bg-glass2 rounded-xl p-4 border border-edge">
+                    <p className="text-xs text-faint uppercase tracking-wider mb-1">Toll Amount</p>
+                    <p className="text-2xl font-semibold text-mist">${arrivedVendor.toll.toFixed(2)}</p>
                   </div>
                 )}
                 {arrivedVendor.note && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Note</p>
-                    <p className="text-gray-700 font-medium">{arrivedVendor.note}</p>
+                  <div className="bg-glass2 rounded-xl p-4 border border-edge">
+                    <p className="text-xs text-faint uppercase tracking-wider mb-1">Note</p>
+                    <p className="text-dim font-medium">{arrivedVendor.note}</p>
                   </div>
                 )}
                 <button
                   onClick={proceedToNextRoute}
-                  className="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all text-lg tracking-wide flex items-center justify-center gap-2"
+                  className="gbtn w-full py-4 font-semibold text-lg tracking-wide flex items-center justify-center gap-2"
                 >
                   <Navigation className="w-5 h-5" />
                   Select Next Route
@@ -518,45 +518,45 @@ export function DriverDashboard() {
   // ─── ACTIVE ROUTE SCREEN ──────────────────────────────────────────────────────
   if (routeState === 'active' && selectedVendor) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-14">
+      <div className="min-h-screen pt-14">
         <ClockBar userId={user?.id} onClockOut={handleClockOut} onSignOut={handleSignOut} onStatusChange={setClockedIn} />
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px)] p-6">
           <div className="w-full max-w-lg">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="bg-gray-900 px-6 py-5">
+            <div className="card overflow-hidden">
+              <div className="bg-[#1b1f27] px-6 py-5 border-b border-edge">
                 <div className="flex items-center gap-2 mb-1">
-                  <Navigation className="w-4 h-4 text-white" />
-                  <span className="text-white text-sm font-medium uppercase tracking-widest">Route Active</span>
+                  <Navigation className="w-4 h-4 text-signal" />
+                  <span className="text-signal text-sm font-medium uppercase tracking-widest">Route Active</span>
                 </div>
-                <h2 className="text-2xl font-semibold text-white font-serif">{selectedVendor.name}</h2>
+                <h2 className="text-2xl font-light tracking-tight text-mist">{selectedVendor.name}</h2>
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Destination</p>
-                  <p className="text-gray-900 font-medium text-lg">{selectedVendor.address}</p>
+                  <p className="text-xs text-faint uppercase tracking-wider mb-1">Destination</p>
+                  <p className="text-mist font-medium text-lg">{selectedVendor.address}</p>
                 </div>
 
                 {hasCoords && !isMeiborg && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Distance to Destination</p>
+                  <div className="bg-glass2 rounded-xl p-4 border border-edge">
+                    <p className="text-xs text-faint uppercase tracking-wider mb-2">Distance to Destination</p>
                     {geoError ? (
-                      <div className="flex items-center gap-2 text-amber-600">
+                      <div className="flex items-center gap-2 text-signal">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         <p className="text-sm">{geoError}</p>
                       </div>
                     ) : distance !== null ? (
                       <div className="flex items-center gap-6">
                         <div>
-                          <p className="text-2xl font-semibold text-gray-900">{formatDistance(distance)}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">Arrival auto-detects within 650 ft</p>
+                          <p className="text-2xl font-semibold text-mist">{formatDistance(distance)}</p>
+                          <p className="text-xs text-faint mt-0.5">Arrival auto-detects within 650 ft</p>
                         </div>
-                        <div className="border-l border-gray-300 pl-6">
-                          <p className="text-2xl font-semibold text-gray-900">{estimateTime(distance)}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">Est. drive time</p>
+                        <div className="border-l border-edge pl-6">
+                          <p className="text-2xl font-semibold text-mist">{estimateTime(distance)}</p>
+                          <p className="text-xs text-faint mt-0.5">Est. drive time</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-gray-500">
+                      <div className="flex items-center gap-2 text-faint">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span className="text-sm">Acquiring location...</span>
                       </div>
@@ -565,15 +565,15 @@ export function DriverDashboard() {
                 )}
 
                 {selectedVendor.toll !== null && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Toll Amount</p>
-                    <p className="text-2xl font-semibold text-gray-900">${selectedVendor.toll.toFixed(2)}</p>
+                  <div className="bg-glass2 rounded-xl p-4 border border-edge">
+                    <p className="text-xs text-faint uppercase tracking-wider mb-1">Toll Amount</p>
+                    <p className="text-2xl font-semibold text-mist">${selectedVendor.toll.toFixed(2)}</p>
                   </div>
                 )}
                 {selectedVendor.note && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Note</p>
-                    <p className="text-gray-700 font-medium">{selectedVendor.note}</p>
+                  <div className="bg-glass2 rounded-xl p-4 border border-edge">
+                    <p className="text-xs text-faint uppercase tracking-wider mb-1">Note</p>
+                    <p className="text-dim font-medium">{selectedVendor.note}</p>
                   </div>
                 )}
 
@@ -582,7 +582,7 @@ export function DriverDashboard() {
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVendor.address)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-xl transition-all"
+                    className="gbtn-ghost flex items-center justify-center gap-2 w-full py-3 font-medium"
                   >
                     <MapPin className="w-4 h-4" />
                     Open in Maps
@@ -591,7 +591,7 @@ export function DriverDashboard() {
 
                 <button
                   onClick={() => routeLogIdRef.current ? markArrived(routeLogIdRef.current, selectedVendor) : setRouteState('arrived')}
-                  className="w-full py-3 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-ok text-[#1a1205] hover:brightness-105 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Mark as Arrived
@@ -599,7 +599,7 @@ export function DriverDashboard() {
 
                 <button
                   onClick={proceedToNextRoute}
-                  className="w-full py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition-all"
+                  className="gbtn-ghost w-full py-3 font-medium"
                 >
                   Select Different Route
                 </button>
@@ -613,43 +613,43 @@ export function DriverDashboard() {
 
   // ─── ROUTE SELECTION SCREEN ───────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 pt-14">
+    <div className="min-h-screen pt-14">
       <ClockBar userId={user?.id} onClockOut={handleClockOut} onSignOut={handleSignOut} onStatusChange={setClockedIn} />
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px)] p-6">
         <div className="w-full max-w-lg">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-semibold text-gray-900 font-serif mb-2">Start Your Route</h1>
-            <p className="text-gray-600">Select your destination to begin</p>
+            <h1 className="text-3xl font-light tracking-tight text-mist mb-2">Start Your Route</h1>
+            <p className="text-dim">Select your destination to begin</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
+          <div className="card p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+              <label className="block text-sm font-medium text-dim mb-2">Destination</label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setOpen(!open)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-all"
+                  className="ginput w-full px-4 py-3 text-left flex items-center justify-between"
                 >
-                  <span className={selected ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                  <span className={selected ? 'text-mist font-medium' : 'text-faint'}>
                     {selected || 'Select a vendor / location'}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-faint transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
 
                 {open && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-72 overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-[#1b1f27] border border-edge2 rounded-xl shadow-xl max-h-72 overflow-y-auto">
                     {vendors.map((vendor) => (
                       <button
                         key={vendor.name}
                         type="button"
                         onClick={() => { setSelected(vendor.name); setOpen(false); }}
-                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 ${
-                          selected === vendor.name ? 'bg-gray-50' : ''
+                        className={`w-full px-4 py-3 text-left hover:bg-glass2 transition-colors border-b border-edge last:border-0 ${
+                          selected === vendor.name ? 'bg-glass2' : ''
                         }`}
                       >
-                        <p className="text-gray-900 font-medium text-sm">{vendor.name}</p>
-                        <p className="text-gray-500 text-xs mt-0.5 truncate">{vendor.address}</p>
+                        <p className="text-mist font-medium text-sm">{vendor.name}</p>
+                        <p className="text-faint text-xs mt-0.5 truncate">{vendor.address}</p>
                       </button>
                     ))}
                   </div>
@@ -658,43 +658,43 @@ export function DriverDashboard() {
             </div>
 
             {selectedVendor && (
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2">
+              <div className="bg-glass2 rounded-xl p-4 border border-edge space-y-2">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Address</p>
-                  <p className="text-gray-900 font-medium mt-0.5">{selectedVendor.address}</p>
+                  <p className="text-xs text-faint uppercase tracking-wider">Address</p>
+                  <p className="text-mist font-medium mt-0.5">{selectedVendor.address}</p>
                 </div>
                 {selectedVendor.toll !== null && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Toll</p>
-                    <p className="text-gray-900 font-semibold mt-0.5">${selectedVendor.toll.toFixed(2)}</p>
+                    <p className="text-xs text-faint uppercase tracking-wider">Toll</p>
+                    <p className="text-mist font-semibold mt-0.5">${selectedVendor.toll.toFixed(2)}</p>
                   </div>
                 )}
                 {selectedVendor.note && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Note</p>
-                    <p className="text-gray-700 mt-0.5">{selectedVendor.note}</p>
+                    <p className="text-xs text-faint uppercase tracking-wider">Note</p>
+                    <p className="text-dim mt-0.5">{selectedVendor.note}</p>
                   </div>
                 )}
                 {hasCoords && !isMeiborg && (
                   <div className="flex items-center gap-1.5 pt-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <p className="text-xs text-green-700 font-medium">Geofence arrival detection enabled</p>
+                    <div className="w-2 h-2 rounded-full bg-ok"></div>
+                    <p className="text-xs text-ok font-medium">Geofence arrival detection enabled</p>
                   </div>
                 )}
               </div>
             )}
 
             {clockedIn === false && (
-              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <p className="text-sm text-amber-700 font-medium">You must clock in before starting a route.</p>
+              <div className="flex items-center gap-2 px-4 py-3 bg-signal-dim border border-[rgba(255,201,60,0.35)] rounded-xl">
+                <AlertCircle className="w-4 h-4 text-signal flex-shrink-0" />
+                <p className="text-sm text-signal font-medium">You must clock in before starting a route.</p>
               </div>
             )}
 
             <button
               onClick={handleStartRoute}
               disabled={!selected || saving || clockedIn !== true}
-              className="w-full py-4 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all text-lg tracking-wide flex items-center justify-center gap-2"
+              className="gbtn w-full py-4 font-semibold text-lg tracking-wide flex items-center justify-center gap-2"
             >
               {saving ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Logging Route...</>
@@ -705,17 +705,17 @@ export function DriverDashboard() {
           </div>
 
           {/* ── HNIS Load Number ── */}
-          <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4">
+          <div className="mt-4 card px-5 py-4">
             <div className="flex items-center gap-2 mb-3">
-              <Package className="w-4 h-4 text-amber-500" />
-              <p className="text-sm font-semibold text-gray-700">HNIS Load # <span className="text-gray-400 font-normal">(optional)</span></p>
+              <Package className="w-4 h-4 text-signal" />
+              <p className="text-sm font-semibold text-dim">HNIS Load # <span className="text-faint font-normal">(optional)</span></p>
             </div>
             <input
               type="text"
               value={hnisNumber}
               onChange={e => setHnisNumber(e.target.value)}
               placeholder="Enter HNIS load number..."
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-800 transition-all"
+              className="ginput w-full px-3 py-2.5 text-sm"
             />
           </div>
 
@@ -724,18 +724,18 @@ export function DriverDashboard() {
             const todayTotal = todayStops.reduce((s, st) => s + (st.toll ?? 0), 0);
             const stopsWithToll = todayStops.filter(st => st.toll != null && st.toll > 0);
             return (
-              <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="mt-4 card overflow-hidden">
                 <button
                   onClick={() => setTollsExpanded(e => !e)}
-                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  className="w-full px-5 py-4 flex items-center justify-between hover:bg-glass2 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-rose-50 rounded-lg flex items-center justify-center">
-                      <Receipt className="w-4 h-4 text-rose-600" />
+                    <div className="w-9 h-9 bg-signal-dim rounded-lg flex items-center justify-center">
+                      <Receipt className="w-4 h-4 text-signal" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-gray-900">Today's Tolls</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-sm font-semibold text-mist">Today's Tolls</p>
+                      <p className="text-xs text-faint mt-0.5">
                         {todayStops.length === 0
                           ? 'No stops logged yet'
                           : `${todayStops.length} stop${todayStops.length !== 1 ? 's' : ''} completed`}
@@ -743,60 +743,60 @@ export function DriverDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-xl font-bold ${todayTotal > 0 ? 'text-rose-600' : 'text-gray-400'}`}>
+                    <span className={`text-xl font-bold ${todayTotal > 0 ? 'text-signal' : 'text-faint'}`}>
                       ${todayTotal.toFixed(2)}
                     </span>
                     {tollsExpanded
-                      ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                      : <ChevronDown className="w-4 h-4 text-gray-400" />
+                      ? <ChevronUp className="w-4 h-4 text-faint" />
+                      : <ChevronDown className="w-4 h-4 text-faint" />
                     }
                   </div>
                 </button>
 
                 {tollsExpanded && (
-                  <div className="border-t border-gray-100 bg-gray-50 px-5 py-4 space-y-4">
+                  <div className="border-t border-edge bg-glass2 px-5 py-4 space-y-4">
                     {/* Today's stop breakdown */}
                     {todayStops.length > 0 ? (
                       <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Today's Stops</p>
+                        <p className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Today's Stops</p>
                         <div className="space-y-2">
                           {todayStops.map((s, i) => (
-                            <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-gray-200">
+                            <div key={i} className="flex items-center justify-between bg-glass2 rounded-lg px-3 py-2.5 border border-edge">
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-gray-900 truncate">{s.vendor_name}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">
+                                <p className="text-sm font-medium text-mist truncate">{s.vendor_name}</p>
+                                <p className="text-xs text-faint mt-0.5">
                                   Arrived {new Date(s.arrived_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                                 </p>
                               </div>
-                              <span className={`ml-3 text-sm font-semibold flex-shrink-0 ${s.toll && s.toll > 0 ? 'text-rose-600' : 'text-gray-400'}`}>
+                              <span className={`ml-3 text-sm font-semibold flex-shrink-0 ${s.toll && s.toll > 0 ? 'text-signal' : 'text-faint'}`}>
                                 {s.toll && s.toll > 0 ? `$${s.toll.toFixed(2)}` : 'No toll'}
                               </span>
                             </div>
                           ))}
                         </div>
                         {stopsWithToll.length > 0 && (
-                          <div className="mt-3 flex items-center justify-between px-3 py-2 bg-rose-50 rounded-lg border border-rose-200">
-                            <p className="text-sm font-semibold text-rose-700">Total today</p>
-                            <p className="text-sm font-bold text-rose-700">${todayTotal.toFixed(2)}</p>
+                          <div className="mt-3 flex items-center justify-between px-3 py-2 bg-signal-dim rounded-lg border border-[rgba(255,201,60,0.35)]">
+                            <p className="text-sm font-semibold text-signal">Total today</p>
+                            <p className="text-sm font-bold text-signal">${todayTotal.toFixed(2)}</p>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-400 italic text-center py-2">No stops logged today yet.</p>
+                      <p className="text-sm text-faint italic text-center py-2">No stops logged today yet.</p>
                     )}
 
                     {/* Recent history */}
                     {weekHistory.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Recent History</p>
+                        <p className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Recent History</p>
                         <div className="space-y-1.5">
                           {weekHistory.map((w, i) => {
                             const d = new Date(w.work_date + 'T12:00:00');
                             const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                             return (
-                              <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200">
-                                <p className="text-sm text-gray-700">{label}</p>
-                                <p className="text-sm font-semibold text-rose-600">${w.toll_total.toFixed(2)}</p>
+                              <div key={i} className="flex items-center justify-between bg-glass2 rounded-lg px-3 py-2 border border-edge">
+                                <p className="text-sm text-dim">{label}</p>
+                                <p className="text-sm font-semibold text-signal">${w.toll_total.toFixed(2)}</p>
                               </div>
                             );
                           })}
@@ -810,23 +810,23 @@ export function DriverDashboard() {
           })()}
 
           {/* ── Report Issue ── */}
-          <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="mt-4 card overflow-hidden">
             <button
               onClick={() => { setReportOpen(o => !o); setReportSent(false); }}
-              className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className="w-full px-5 py-4 flex items-center justify-between hover:bg-glass2 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
-                  <MessageSquareWarning className="w-4 h-4 text-amber-600" />
+                <div className="w-9 h-9 bg-signal-dim rounded-lg flex items-center justify-center">
+                  <MessageSquareWarning className="w-4 h-4 text-signal" />
                 </div>
-                <p className="text-sm font-semibold text-gray-700">Report an Issue</p>
+                <p className="text-sm font-semibold text-dim">Report an Issue</p>
               </div>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${reportOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-faint transition-transform ${reportOpen ? 'rotate-180' : ''}`} />
             </button>
             {reportOpen && (
-              <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
+              <div className="border-t border-edge bg-glass2 px-5 py-4">
                 {reportSent ? (
-                  <div className="flex items-center gap-2 text-green-700 py-2">
+                  <div className="flex items-center gap-2 text-ok py-2">
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">Issue reported — office has been notified.</span>
                   </div>
@@ -837,12 +837,12 @@ export function DriverDashboard() {
                       onChange={e => setReportText(e.target.value)}
                       rows={3}
                       placeholder="Describe the issue (e.g. geofence not detecting arrival, stop missing from list)..."
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-gray-800 transition-all"
+                      className="ginput w-full px-3 py-2.5 text-sm resize-none"
                     />
                     <button
                       type="submit"
                       disabled={reportSending || !reportText.trim()}
-                      className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                      className="gbtn w-full py-2.5 text-sm font-medium flex items-center justify-center gap-2"
                     >
                       {reportSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquareWarning className="w-4 h-4" />}
                       {reportSending ? 'Sending...' : 'Send Report'}

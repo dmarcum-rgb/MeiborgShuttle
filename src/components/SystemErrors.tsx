@@ -78,15 +78,15 @@ export function SystemErrors() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 font-serif">System Errors</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-light text-mist tracking-tight">System Errors</h1>
+          <p className="text-faint text-sm mt-0.5">
             {open.length} open &middot; {resolved.length} resolved
           </p>
         </div>
         <button
           onClick={fetchErrors}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+          className="flex items-center gap-2 px-3 py-2 text-sm text-dim hover:text-mist hover:bg-glass2 rounded-lg transition-all"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -94,13 +94,13 @@ export function SystemErrors() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-glass2 p-1 rounded-xl w-fit">
         {(['open', 'resolved'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              tab === t ? 'bg-signal text-[#1a1205] shadow-sm' : 'text-faint hover:text-mist'
             }`}
           >
             {t === 'open' ? `Open (${open.length})` : `Resolved (${resolved.length})`}
@@ -111,10 +111,10 @@ export function SystemErrors() {
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-edge border-t-signal rounded-full animate-spin" />
         </div>
       ) : displayed.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-faint">
           <CheckCircle2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
           <p className="font-medium">{tab === 'open' ? 'No open errors' : 'No resolved errors yet'}</p>
           {tab === 'open' && <p className="text-sm mt-1">The system will log errors here automatically</p>}
@@ -132,21 +132,21 @@ export function SystemErrors() {
             return (
               <div
                 key={err.id}
-                className={`bg-white rounded-xl border transition-all ${
-                  err.resolved ? 'border-gray-100 opacity-70' : 'border-red-100 shadow-sm'
+                className={`card transition-all ${
+                  err.resolved ? 'opacity-70' : 'border-[rgba(255,107,107,0.35)]'
                 }`}
               >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
                     {/* Icon */}
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      err.resolved ? 'bg-green-50' : err.error_type === 'manual' ? 'bg-amber-50' : 'bg-red-50'
+                      err.resolved ? 'bg-[rgba(75,211,160,0.12)]' : err.error_type === 'manual' ? 'bg-signal-dim' : 'bg-[rgba(255,107,107,0.12)]'
                     }`}>
                       {err.resolved
-                        ? <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        ? <CheckCircle2 className="w-4 h-4 text-ok" />
                         : err.error_type === 'manual'
-                          ? <User className="w-4 h-4 text-amber-600" />
-                          : <Bot className="w-4 h-4 text-red-600" />
+                          ? <User className="w-4 h-4 text-signal" />
+                          : <Bot className="w-4 h-4 text-bad" />
                       }
                     </div>
 
@@ -155,32 +155,32 @@ export function SystemErrors() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           err.error_type === 'manual'
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-red-50 text-red-700'
+                            ? 'bg-signal-dim text-signal'
+                            : 'bg-[rgba(255,107,107,0.12)] text-bad'
                         }`}>
                           {err.error_type === 'manual' ? 'Reported' : 'Auto-detected'}
                         </span>
                         {err.source && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-mono">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-glass2 text-dim font-mono">
                             {err.source}
                           </span>
                         )}
-                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-faint flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {timeLabel}
                         </span>
                       </div>
 
-                      <p className="text-sm text-gray-900 font-medium mt-1.5 leading-snug">{err.message}</p>
+                      <p className="text-sm text-mist font-medium mt-1.5 leading-snug">{err.message}</p>
 
                       {err.reporter_name && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-faint mt-1">
                           Reported by <span className="font-medium">{err.reporter_name}</span>
                         </p>
                       )}
 
                       {err.resolved && err.resolved_by_name && (
-                        <p className="text-xs text-green-600 mt-1">
+                        <p className="text-xs text-ok mt-1">
                           Resolved by <span className="font-medium">{err.resolved_by_name}</span>
                           {err.resolved_at && ` · ${new Date(err.resolved_at).toLocaleString('en-US', {
                             month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
@@ -194,7 +194,7 @@ export function SystemErrors() {
                       {hasContext && (
                         <button
                           onClick={() => toggleExpand(err.id)}
-                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                          className="p-1.5 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
                           title="View details"
                         >
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -204,7 +204,7 @@ export function SystemErrors() {
                         <button
                           onClick={() => resolve(err.id)}
                           disabled={resolving === err.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-ok text-[#1a1205] hover:brightness-105 disabled:opacity-50 text-xs font-medium rounded-lg transition-all"
                         >
                           {resolving === err.id
                             ? <RefreshCw className="w-3 h-3 animate-spin" />
@@ -218,9 +218,9 @@ export function SystemErrors() {
 
                   {/* Expanded context */}
                   {isExpanded && hasContext && (
-                    <div className="mt-3 ml-11 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Details</p>
-                      <pre className="text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap break-all font-mono leading-relaxed">
+                    <div className="mt-3 ml-11 bg-glass2 rounded-lg p-3 border border-edge">
+                      <p className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Details</p>
+                      <pre className="text-xs text-dim overflow-x-auto whitespace-pre-wrap break-all font-mono leading-relaxed">
                         {JSON.stringify(err.context, null, 2)}
                       </pre>
                     </div>
