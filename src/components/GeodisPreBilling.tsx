@@ -247,17 +247,17 @@ export function GeodisPreBilling() {
       const stops = stopsByTs.get(ts.id) ?? [];
       row.stopCount += stops.length;
 
-      // Attach receipt image signed URLs (bucket is private, signed URLs expire in 1 hour)
+      // Permanent public URLs so receipt proof in an exported/kept billing sheet
+      // never expires (bucket is public; paths are unguessable UUIDs).
       const dayFuelUrls: string[] = [];
       const dayTollUrls: string[] = [];
       const imgs = receiptImagesByTs.get(ts.id) ?? [];
       for (const img of imgs) {
-        const { data: urlData } = await supabase.storage
-          .from('receipts')
-          .createSignedUrl(img.storage_path, 3600);
-        if (urlData?.signedUrl) {
-          if (img.receipt_type === 'fuel') { row.fuelReceiptUrls.push(urlData.signedUrl); dayFuelUrls.push(urlData.signedUrl); }
-          else if (img.receipt_type === 'toll') { row.tollReceiptUrls.push(urlData.signedUrl); dayTollUrls.push(urlData.signedUrl); }
+        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(img.storage_path);
+        const url = urlData?.publicUrl;
+        if (url) {
+          if (img.receipt_type === 'fuel') { row.fuelReceiptUrls.push(url); dayFuelUrls.push(url); }
+          else if (img.receipt_type === 'toll') { row.tollReceiptUrls.push(url); dayTollUrls.push(url); }
         }
       }
 
@@ -545,9 +545,9 @@ export function GeodisPreBilling() {
 
     // ── Column widths ─────────────────────────────────────────────────────────
     ws['!cols'] = [
-      { wch: 26 }, { wch: 22 }, { wch: 9 }, { wch: 10 }, { wch: 10 },
+      { wch: 26 }, { wch: 22 }, { wch: 9 }, { wch: 12 }, { wch: 12 },
       ...DAYS.map(() => ({ wch: 8 })),
-      { wch: 9 }, { wch: 8 }, { wch: 12 },
+      { wch: 10 }, { wch: 10 }, { wch: 16 },
     ];
 
     // ── Row heights ───────────────────────────────────────────────────────────
