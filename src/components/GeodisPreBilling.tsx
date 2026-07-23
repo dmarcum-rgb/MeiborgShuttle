@@ -461,13 +461,13 @@ export function GeodisPreBilling() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 font-serif">Geodis Pre-Billing</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Weekly billing preview — approved timesheets only · $79.00/hr</p>
+          <h1 className="text-3xl font-light text-mist tracking-tight">Geodis Pre-Billing</h1>
+          <p className="text-faint text-sm mt-0.5">Weekly billing preview — approved timesheets only · $79.00/hr</p>
         </div>
         <button
           onClick={exportToExcel}
           disabled={!weekData}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-all"
+          className="gbtn-ghost flex items-center gap-2 px-3 py-2 text-sm disabled:opacity-40"
         >
           <FileSpreadsheet className="w-4 h-4" />
           Export to Excel
@@ -476,40 +476,40 @@ export function GeodisPreBilling() {
 
       {/* Week navigator */}
       <div className="flex items-center gap-3">
-        <button onClick={prevWeek} className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition-all">
+        <button onClick={prevWeek} className="p-2 rounded-lg border border-edge text-faint hover:bg-glass2 transition-all">
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <div className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-800 min-w-[220px] text-center">
+        <div className="px-4 py-2 card rounded-lg text-sm font-medium text-mist min-w-[220px] text-center">
           Week of {weekLabel(weekStart)}
         </div>
-        <button onClick={nextWeek} className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 transition-all">
+        <button onClick={nextWeek} className="p-2 rounded-lg border border-edge text-faint hover:bg-glass2 transition-all">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-edge border-t-signal rounded-full animate-spin" />
         </div>
       ) : weekData && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="card overflow-hidden">
           {/* Company header */}
-          <div className="bg-gray-900 text-white px-6 py-4 flex items-start justify-between">
+          <div className="bg-[#1b1f27] text-mist px-6 py-4 flex items-start justify-between border-b border-edge">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">Bill To</p>
+              <p className="text-xs text-faint uppercase tracking-widest mb-0.5">Bill To</p>
               <p className="font-semibold text-lg">Logisnext / Geodis</p>
-              <p className="text-gray-300 text-sm">Houston Production</p>
-              <p className="text-gray-300 text-sm">240 N Prospect St</p>
-              <p className="text-gray-400 text-xs">Marengo, IL 60152</p>
-              <p className="text-gray-400 text-xs mt-0.5">Attn: Damon Gobble</p>
+              <p className="text-dim text-sm">Houston Production</p>
+              <p className="text-dim text-sm">240 N Prospect St</p>
+              <p className="text-faint text-xs">Marengo, IL 60152</p>
+              <p className="text-faint text-xs mt-0.5">Attn: Damon Gobble</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">From</p>
+              <p className="text-xs text-faint uppercase tracking-widest mb-0.5">From</p>
               <p className="font-semibold">Meiborg</p>
-              <p className="text-gray-300 text-sm">2210 Harrison Ave</p>
-              <p className="text-gray-400 text-xs">Rockford, IL 61104</p>
-              <p className="text-gray-300 text-sm mt-2">
-                <span className="text-gray-400">Week Ending: </span>
+              <p className="text-dim text-sm">2210 Harrison Ave</p>
+              <p className="text-faint text-xs">Rockford, IL 61104</p>
+              <p className="text-dim text-sm mt-2">
+                <span className="text-faint">Week Ending: </span>
                 {fmt(weekData.weekEnd)}
               </p>
             </div>
@@ -519,92 +519,92 @@ export function GeodisPreBilling() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-100 border-b border-gray-300">
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Rate Schedule</th>
-                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Driver / Truck #</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Fuel</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Tolls</th>
+                <tr className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider whitespace-nowrap">Rate Schedule</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider whitespace-nowrap">Driver / Truck #</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Fuel</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Tolls</th>
                   {DAYS.map(d => (
-                    <th key={d} className="text-center px-2 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">{d}</th>
+                    <th key={d} className="text-center px-2 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider w-20">{d}</th>
                   ))}
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Reg Hrs</th>
-                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Rate</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider whitespace-nowrap">Reg Hrs</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Rate</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-edge">
                 {weekData.drivers.map((driver, i) => {
                   const lineTotal = driver.totalHours * HOURLY_RATE;
                   const hasData = driver.totalHours > 0 || driver.fuel > 0 || driver.tolls > 0;
                   return (
-                    <tr key={driver.driver_name} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                      <td className="px-4 py-3 text-xs text-gray-500 font-medium whitespace-nowrap">
+                    <tr key={driver.driver_name} className={i % 2 === 0 ? '' : 'bg-glass2'}>
+                      <td className="px-4 py-3 text-xs text-faint font-medium whitespace-nowrap">
                         40 hr – Shuttle Driver {i + 1}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
-                        <p className={`font-medium ${hasData ? 'text-gray-900' : 'text-gray-500'}`}>{driver.driver_name}</p>
+                        <p className={`font-medium ${hasData ? 'text-mist' : 'text-faint'}`}>{driver.driver_name}</p>
                         {driver.vehicle_number && (
-                          <p className="text-xs text-gray-400">Truck #{driver.vehicle_number}</p>
+                          <p className="text-xs text-faint">Truck #{driver.vehicle_number}</p>
                         )}
                       </td>
                       <td className="px-3 py-3 text-right text-xs whitespace-nowrap">
                         {driver.fuel > 0
-                          ? <span className="text-gray-700">($${driver.fuel.toFixed(2)})</span>
-                          : <span className="text-gray-300">($ —)</span>}
+                          ? <span className="text-dim">($${driver.fuel.toFixed(2)})</span>
+                          : <span className="text-faint">($ —)</span>}
                       </td>
                       <td className="px-3 py-3 text-right text-xs whitespace-nowrap">
                         {driver.tolls > 0
-                          ? <span className="text-gray-700">($${driver.tolls.toFixed(2)})</span>
-                          : <span className="text-gray-300">($ —)</span>}
+                          ? <span className="text-dim">($${driver.tolls.toFixed(2)})</span>
+                          : <span className="text-faint">($ —)</span>}
                       </td>
                       {driver.dailyHours.map((h, di) => (
                         <td key={di} className="px-2 py-3 text-center align-top">
                           {h != null ? (
                             <div>
-                              <p className="text-gray-900 font-semibold text-sm">{h.toFixed(2)}</p>
+                              <p className="text-mist font-semibold text-sm">{h.toFixed(2)}</p>
                               {driver.startTimes[di] && (
-                                <p className="text-gray-400 leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.startTimes[di])}</p>
+                                <p className="text-faint leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.startTimes[di])}</p>
                               )}
                               {driver.endTimes[di] && (
-                                <p className="text-gray-400 leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.endTimes[di])}</p>
+                                <p className="text-faint leading-tight" style={{ fontSize: '10px' }}>{to12hr(driver.endTimes[di])}</p>
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-200 text-xs">—</span>
+                            <span className="text-faint text-xs">—</span>
                           )}
                         </td>
                       ))}
                       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
                         {hasData
-                          ? <span className="text-gray-900">{driver.totalHours.toFixed(2)}</span>
-                          : <span className="text-gray-300">0.00</span>}
+                          ? <span className="text-mist">{driver.totalHours.toFixed(2)}</span>
+                          : <span className="text-faint">0.00</span>}
                       </td>
-                      <td className="px-3 py-3 text-right text-gray-500 text-xs whitespace-nowrap">
+                      <td className="px-3 py-3 text-right text-faint text-xs whitespace-nowrap">
                         ${HOURLY_RATE.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {hasData
-                          ? <span className="text-gray-900">${lineTotal.toFixed(2)}</span>
-                          : <span className="text-gray-300">$0.00</span>}
+                          ? <span className="text-mist">${lineTotal.toFixed(2)}</span>
+                          : <span className="text-faint">$0.00</span>}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-100 border-t-2 border-gray-300">
-                  <td colSpan={4} className="px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <tr className="bg-glass2 border-t-2 border-edge2">
+                  <td colSpan={4} className="px-4 py-2.5 text-xs font-semibold text-faint uppercase tracking-wider">
                     Daily Totals
                   </td>
                   {DAYS.map((_, di) => {
                     const dayTotal = weekData.drivers.reduce((s, d) => s + (d.dailyHours[di] ?? 0), 0);
                     return (
-                      <td key={di} className="px-2 py-2.5 text-center text-sm font-semibold text-gray-800">
-                        {dayTotal > 0 ? dayTotal.toFixed(2) : <span className="text-gray-300">—</span>}
+                      <td key={di} className="px-2 py-2.5 text-center text-sm font-semibold text-dim">
+                        {dayTotal > 0 ? dayTotal.toFixed(2) : <span className="text-faint">—</span>}
                       </td>
                     );
                   })}
-                  <td className="px-3 py-2.5 text-right font-bold text-gray-900">
+                  <td className="px-3 py-2.5 text-right font-bold text-mist">
                     {weekData.drivers.reduce((s, d) => s + d.totalHours, 0).toFixed(2)}
                   </td>
                   <td />
@@ -615,25 +615,25 @@ export function GeodisPreBilling() {
           </div>
 
           {/* Summary */}
-          <div className="border-t border-gray-200 px-6 py-5 flex justify-end">
+          <div className="border-t border-edge px-6 py-5 flex justify-end">
             <div className="w-72 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-dim">
                 <span>Subtotal (labor)</span>
-                <span className="font-medium text-gray-900">${weekData.subtotal.toFixed(2)}</span>
+                <span className="font-medium text-mist">${weekData.subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-dim">
                 <span>Fuel</span>
-                <span className="font-medium text-gray-700">
-                  {weekData.totalFuel > 0 ? `($${weekData.totalFuel.toFixed(2)})` : <span className="text-gray-400">($ —)</span>}
+                <span className="font-medium text-dim">
+                  {weekData.totalFuel > 0 ? `($${weekData.totalFuel.toFixed(2)})` : <span className="text-faint">($ —)</span>}
                 </span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-dim">
                 <span>Tolls</span>
-                <span className="font-medium text-gray-700">
-                  {weekData.totalTolls > 0 ? `($${weekData.totalTolls.toFixed(2)})` : <span className="text-gray-400">($ —)</span>}
+                <span className="font-medium text-dim">
+                  {weekData.totalTolls > 0 ? `($${weekData.totalTolls.toFixed(2)})` : <span className="text-faint">($ —)</span>}
                 </span>
               </div>
-              <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-300 pt-2">
+              <div className="flex justify-between text-lg font-light text-mist border-t border-edge2 pt-2">
                 <span>Total</span>
                 <span>${weekData.grandTotal.toFixed(2)}</span>
               </div>

@@ -90,23 +90,23 @@ function buildEvents(logs: RawLog[], drivers: DriverMap, newIds: Set<string>): F
 const EVENT_CONFIG = {
   departed: {
     icon: LogOut,
-    iconBg: 'bg-gray-100',
-    iconColor: 'text-gray-500',
+    iconBg: 'bg-glass2',
+    iconColor: 'text-faint',
     label: 'Departed',
-    labelColor: 'text-gray-600',
-    dot: 'bg-gray-400',
-    badgeBg: 'bg-gray-100',
-    badgeText: 'text-gray-600',
+    labelColor: 'text-dim',
+    dot: 'bg-faint',
+    badgeBg: 'bg-glass2',
+    badgeText: 'text-dim',
   },
   arrived: {
     icon: CheckCircle,
-    iconBg: 'bg-green-100',
-    iconColor: 'text-green-600',
+    iconBg: 'bg-[rgba(75,211,160,0.12)]',
+    iconColor: 'text-ok',
     label: 'Arrived',
-    labelColor: 'text-green-700',
-    dot: 'bg-green-500',
-    badgeBg: 'bg-green-50',
-    badgeText: 'text-green-700',
+    labelColor: 'text-ok',
+    dot: 'bg-ok',
+    badgeBg: 'bg-[rgba(75,211,160,0.12)]',
+    badgeText: 'text-ok',
   },
 };
 
@@ -216,19 +216,19 @@ export function DailyFeed() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900 font-serif">Daily Feed</h1>
-          <p className="text-gray-500 mt-1">Real-time driver departures and arrivals</p>
+          <h1 className="text-3xl font-light tracking-tight text-mist">Daily Feed</h1>
+          <p className="text-faint mt-1">Real-time driver departures and arrivals</p>
         </div>
         <div className="flex items-center gap-2">
           {isToday && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
-              <Radio className="w-3.5 h-3.5 text-green-500 animate-pulse" />
-              <span className="text-xs font-semibold text-green-700">Live</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(75,211,160,0.12)] border border-[rgba(75,211,160,0.35)] rounded-full">
+              <Radio className="w-3.5 h-3.5 text-ok animate-pulse" />
+              <span className="text-xs font-semibold text-ok">Live</span>
             </div>
           )}
           <button
             onClick={fetchLogs}
-            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+            className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
             title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
@@ -240,20 +240,20 @@ export function DailyFeed() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => shiftDay(-1)}
-          className="p-2 border border-gray-200 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
+          className="p-2 border border-edge rounded-xl text-faint hover:text-mist hover:bg-glass2 transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 text-center">
-          <p className="text-lg font-semibold text-gray-900">{dayLabel(selectedDate)}</p>
-          <p className="text-xs text-gray-400">
+          <p className="text-lg font-semibold text-mist">{dayLabel(selectedDate)}</p>
+          <p className="text-xs text-faint">
             {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
         <button
           onClick={() => shiftDay(1)}
           disabled={isToday}
-          className="p-2 border border-gray-200 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="p-2 border border-edge rounded-xl text-faint hover:text-mist hover:bg-glass2 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -262,42 +262,42 @@ export function DailyFeed() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Arrivals', value: arrivals, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Departures', value: departures, icon: LogOut, color: 'text-gray-600', bg: 'bg-gray-100' },
-          { label: 'Active Drivers', value: uniqueDrivers, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Arrivals', value: arrivals, icon: CheckCircle, color: 'text-ok', bg: 'bg-[rgba(75,211,160,0.12)]' },
+          { label: 'Departures', value: departures, icon: LogOut, color: 'text-dim', bg: 'bg-glass2' },
+          { label: 'Active Drivers', value: uniqueDrivers, icon: Clock, color: 'text-signal', bg: 'bg-signal-dim' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
+          <div key={label} className="card px-5 py-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</span>
+              <span className="text-xs font-medium text-faint uppercase tracking-wide">{label}</span>
               <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center`}>
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
             </div>
-            <p className="text-3xl font-bold text-gray-900 tabular-nums">{loading ? '—' : value}</p>
+            <p className="text-3xl font-bold text-mist tabular-nums">{loading ? '—' : value}</p>
           </div>
         ))}
       </div>
 
       {/* Feed */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="card overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-700 rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-edge border-t-signal rounded-full animate-spin" />
           </div>
         ) : events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <Clock className="w-10 h-10 mb-3 text-gray-200" />
-            <p className="font-medium text-gray-600">No activity yet</p>
+          <div className="flex flex-col items-center justify-center py-20 text-faint">
+            <Clock className="w-10 h-10 mb-3 text-faint" />
+            <p className="font-medium text-dim">No activity yet</p>
             <p className="text-sm mt-1">Driver stops will appear here as they happen</p>
           </div>
         ) : (
           <div>
             {grouped.map(group => (
               <div key={group.label}>
-                <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{group.label}</p>
+                <div className="px-6 py-3 bg-glass2 border-b border-edge">
+                  <p className="text-xs font-semibold text-faint uppercase tracking-wider">{group.label}</p>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-edge">
                   {group.events.map(event => {
                     const cfg = EVENT_CONFIG[event.kind];
                     const Icon = cfg.icon;
@@ -305,7 +305,7 @@ export function DailyFeed() {
                       <div
                         key={event.id}
                         className={`flex items-start gap-4 px-6 py-4 transition-colors duration-700 ${
-                          event.isNew ? 'bg-blue-50/70' : 'hover:bg-gray-50/60'
+                          event.isNew ? 'bg-signal-dim' : 'hover:bg-glass2'
                         }`}
                       >
                         {/* Timeline dot + icon */}
@@ -318,26 +318,26 @@ export function DailyFeed() {
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-semibold text-gray-900">{event.driverName}</span>
+                            <span className="text-sm font-semibold text-mist">{event.driverName}</span>
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.badgeBg} ${cfg.badgeText}`}>
                               {cfg.label}
                             </span>
                             {event.isNew && (
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 animate-pulse">
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-signal-dim text-signal animate-pulse">
                                 New
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-700 mt-0.5 font-medium">{event.vendorName}</p>
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{event.address}</p>
+                          <p className="text-sm text-dim mt-0.5 font-medium">{event.vendorName}</p>
+                          <p className="text-xs text-faint mt-0.5 truncate">{event.address}</p>
                         </div>
 
                         {/* Time */}
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-semibold text-gray-900 tabular-nums">
+                          <p className="text-sm font-semibold text-mist tabular-nums">
                             {fmt(event.ts.toISOString())}
                           </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-faint mt-0.5">
                             {event.ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </p>
                         </div>

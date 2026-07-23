@@ -179,11 +179,11 @@ export function Drivers() {
   if (loading) {
     return (
       <div className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-slate-800 rounded w-1/4"></div>
+        <div className="space-y-4">
+          <div className="h-10 skeleton w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-slate-800 rounded-xl"></div>
+              <div key={i} className="h-48 skeleton rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -195,12 +195,12 @@ export function Drivers() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Drivers</h1>
-          <p className="text-slate-400 mt-1">Manage driver profiles and assignments</p>
+          <h1 className="text-2xl font-light tracking-tight text-mist">Drivers</h1>
+          <p className="text-faint mt-1">Manage driver profiles and assignments</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg shadow-lg shadow-amber-500/20 transition-all"
+          className="gbtn flex items-center gap-2 px-4 py-2 transition-all"
         >
           <Plus className="w-4 h-4" />
           Add Driver
@@ -211,25 +211,25 @@ export function Drivers() {
         {drivers.map((driver) => (
           <div
             key={driver.id}
-            className="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-slate-500 transition-all"
+            className="card p-6 hover:border-edge2 transition-all"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-slate-400" />
+                <div className="w-12 h-12 bg-glass2 border border-edge rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-faint" />
                 </div>
                 <div>
-                  <h3 className="text-white font-medium">{driver.name}</h3>
-                  <p className="text-slate-400 text-sm">Driver</p>
+                  <h3 className="text-mist font-medium">{driver.name}</h3>
+                  <p className="text-faint text-sm">Driver</p>
                 </div>
               </div>
               {(() => {
                 const isOnline = [...onlineUserIds].some(uid => userIdToDriverName[uid] === driver.name);
                 return (
                   <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-                    isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'
+                    isOnline ? 'bg-[rgba(75,211,160,0.12)] text-ok' : 'bg-glass2 text-faint'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-ok' : 'bg-faint'}`} />
                     {isOnline ? 'online' : 'offline'}
                   </span>
                 );
@@ -237,31 +237,31 @@ export function Drivers() {
             </div>
 
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-slate-400">
+              <div className="flex items-center gap-2 text-faint">
                 <Truck className="w-4 h-4" />
                 <span className="text-sm">Truck #{driver.truck_number}</span>
               </div>
               {(stopCounts[driver.name] ?? 0) > 0 && (
-                <span className="text-xs text-slate-400">
-                  <span className="font-semibold text-white">{stopCounts[driver.name]}</span> stops
+                <span className="text-xs text-faint">
+                  <span className="font-semibold text-mist">{stopCounts[driver.name]}</span> stops
                 </span>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-700">
-              <p className="text-xs text-slate-500">
+            <div className="flex items-center justify-between pt-4 border-t border-edge">
+              <p className="text-xs text-faint">
                 Added {new Date(driver.created_at).toLocaleDateString()}
               </p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => openModal(driver)}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all"
+                  className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(driver.id)}
-                  className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded-lg transition-all"
+                  className="p-2 text-faint hover:text-bad hover:bg-glass2 rounded-lg transition-all"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -271,13 +271,13 @@ export function Drivers() {
         ))}
 
         {drivers.length === 0 && (
-          <div className="col-span-full bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
-            <User className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <h3 className="text-white font-medium mb-2">No drivers yet</h3>
-            <p className="text-slate-400 text-sm mb-4">Add your first driver to get started</p>
+          <div className="col-span-full card p-12 text-center">
+            <User className="w-12 h-12 text-faint mx-auto mb-4" />
+            <h3 className="text-mist font-medium mb-2">No drivers yet</h3>
+            <p className="text-faint text-sm mb-4">Add your first driver to get started</p>
             <button
               onClick={() => openModal()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-all"
+              className="gbtn inline-flex items-center gap-2 px-4 py-2 transition-all"
             >
               <Plus className="w-4 h-4" />
               Add Driver
@@ -289,14 +289,14 @@ export function Drivers() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between p-6 border-b border-slate-700">
-              <h2 className="text-xl font-semibold text-white">
+          <div className="bg-[#1b1f27] border border-edge2 rounded-xl w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b border-edge">
+              <h2 className="text-xl font-semibold text-mist">
                 {editingDriver ? 'Edit Driver' : 'Add New Driver'}
               </h2>
               <button
                 onClick={closeModal}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all"
+                className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -304,7 +304,7 @@ export function Drivers() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-dim mb-2">
                   Driver Name
                 </label>
                 <input
@@ -312,13 +312,13 @@ export function Drivers() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="ginput w-full px-4 py-3"
                   placeholder="Enter driver name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-dim mb-2">
                   Truck Number
                 </label>
                 <input
@@ -326,19 +326,19 @@ export function Drivers() {
                   value={formData.truck_number}
                   onChange={(e) => setFormData({ ...formData, truck_number: e.target.value })}
                   required
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="ginput w-full px-4 py-3"
                   placeholder="e.g., T-101"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-dim mb-2">
                   Status
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="ginput w-full px-4 py-3"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -349,14 +349,14 @@ export function Drivers() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all"
+                  className="gbtn-ghost flex-1 px-4 py-3 font-medium transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-white font-medium rounded-lg transition-all"
+                  className="gbtn flex-1 px-4 py-3 transition-all"
                 >
                   {saving ? 'Saving...' : editingDriver ? 'Update' : 'Add Driver'}
                 </button>

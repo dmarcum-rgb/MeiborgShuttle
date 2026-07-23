@@ -6,20 +6,20 @@ export function GeodisView() {
   const { signOut } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen">
+      <header className="card rounded-none border-x-0 border-t-0 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-            <img src="/image copy.png" alt="Logo" className="w-5 h-5" />
+          <div className="w-8 h-8 bg-glass2 rounded-lg flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-white font-semibold font-serif">Meiborg Shuttles</h1>
-            <p className="text-gray-400 text-xs">Geodis Billing Portal</p>
+            <h1 className="text-mist font-semibold">Meiborg Shuttles</h1>
+            <p className="text-faint text-xs">Geodis Billing Portal</p>
           </div>
         </div>
         <button
           onClick={signOut}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
+          className="gbtn-ghost flex items-center gap-2 px-3 py-2 text-sm"
         >
           <LogOut className="w-4 h-4" />
           Sign Out

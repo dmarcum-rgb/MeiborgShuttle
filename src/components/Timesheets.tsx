@@ -65,9 +65,9 @@ type EditStop = {
 };
 
 const STATUS_COLORS = {
-  pending: 'bg-gray-100 text-gray-600',
-  submitted: 'bg-blue-50 text-blue-700',
-  approved: 'bg-green-50 text-green-700',
+  pending: 'bg-signal-dim text-signal',
+  submitted: 'bg-glass2 text-dim',
+  approved: 'bg-[rgba(75,211,160,0.12)] text-ok',
 };
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -290,45 +290,45 @@ export function Timesheets() {
   const totalTolls = timesheets.reduce((s, t) => s + (t.toll_total ?? 0), 0);
   const pendingApproval = timesheets.filter(t => t.status === 'submitted').length;
 
-  const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-800 transition-all bg-white';
-  const labelCls = 'block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1';
+  const inputCls = 'ginput w-full px-3 py-2 text-sm text-mist';
+  const labelCls = 'block text-xs font-semibold text-faint uppercase tracking-wide mb-1';
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 font-serif">Timesheets</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Digital daily timesheets from all drivers</p>
+          <h1 className="text-3xl font-light text-mist tracking-tight">Timesheets</h1>
+          <p className="text-faint text-sm mt-1">Digital daily timesheets from all drivers</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Pending Approval', value: pendingApproval, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Total Hours', value: totalHoursAll.toFixed(2), icon: Clock, color: 'text-gray-700', bg: 'bg-gray-50' },
-          { label: 'Fuel Gallons', value: totalFuelGallons.toFixed(3), icon: Truck, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Fuel Spend', value: `$${totalFuelDollars.toFixed(2)}`, icon: Download, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Total Tolls', value: `$${totalTolls.toFixed(2)}`, icon: Receipt, color: 'text-rose-600', bg: 'bg-rose-50' },
+          { label: 'Pending Approval', value: pendingApproval, icon: Clock, color: 'text-signal', bg: 'bg-signal-dim' },
+          { label: 'Total Hours', value: totalHoursAll.toFixed(2), icon: Clock, color: 'text-dim', bg: 'bg-glass2' },
+          { label: 'Fuel Gallons', value: totalFuelGallons.toFixed(3), icon: Truck, color: 'text-signal', bg: 'bg-signal-dim' },
+          { label: 'Fuel Spend', value: `$${totalFuelDollars.toFixed(2)}`, icon: Download, color: 'text-ok', bg: 'bg-[rgba(75,211,160,0.12)]' },
+          { label: 'Total Tolls', value: `$${totalTolls.toFixed(2)}`, icon: Receipt, color: 'text-bad', bg: 'bg-[rgba(255,107,107,0.12)]' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
+          <div key={label} className="card p-4">
             <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center mb-3`}>
               <Icon className={`w-4 h-4 ${color}`} />
             </div>
-            <p className="text-2xl font-semibold text-gray-900">{value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+            <p className="text-2xl font-semibold text-mist">{value}</p>
+            <p className="text-xs text-faint mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="flex rounded-lg border border-edge overflow-hidden">
           {(['submitted', 'approved', 'all'] as const).map(s => (
             <button key={s} onClick={() => setFilterStatus(s)}
               className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                filterStatus === s ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'
+                filterStatus === s ? 'bg-signal text-[#1a1205]' : 'text-dim hover:bg-glass2'
               }`}>
               {s === 'all' ? 'All' : s === 'submitted' ? 'Needs Approval' : 'Approved'}
             </button>
@@ -338,10 +338,10 @@ export function Timesheets() {
           type="week"
           value={filterWeek}
           onChange={e => setFilterWeek(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-gray-800"
+          className="ginput px-3 py-2 text-sm text-mist"
         />
         {filterWeek && (
-          <button onClick={() => setFilterWeek('')} className="text-sm text-gray-500 hover:text-gray-700 underline">
+          <button onClick={() => setFilterWeek('')} className="text-sm text-faint hover:text-mist underline">
             Clear
           </button>
         )}
@@ -350,41 +350,41 @@ export function Timesheets() {
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-edge border-t-signal rounded-full animate-spin" />
         </div>
       ) : timesheets.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-faint">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="font-medium">No timesheets found</p>
+          <p className="font-medium text-dim">No timesheets found</p>
           <p className="text-sm mt-1">Timesheets appear here after drivers clock out</p>
         </div>
       ) : (
         <div className="space-y-3">
           {timesheets.map(ts => (
-            <div key={ts.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div key={ts.id} className="card overflow-hidden">
               {/* Row header */}
               <button
                 onClick={() => setExpanded(expanded === ts.id ? null : ts.id)}
-                className="w-full px-5 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left"
+                className="w-full px-5 py-4 flex items-center gap-4 hover:bg-glass2 transition-colors text-left"
               >
                 <div className="w-12 text-center flex-shrink-0">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{dayName(ts.work_date)}</p>
-                  <p className="text-lg font-semibold text-gray-900 leading-tight">{new Date(ts.work_date + 'T12:00:00').getDate()}</p>
+                  <p className="text-xs text-faint uppercase tracking-wider">{dayName(ts.work_date)}</p>
+                  <p className="text-lg font-semibold text-mist leading-tight">{new Date(ts.work_date + 'T12:00:00').getDate()}</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900">{ts.driver_name || 'Unknown Driver'}</p>
-                    <span className="text-gray-400 text-xs">Truck #{ts.vehicle_number}</span>
+                    <p className="font-semibold text-mist">{ts.driver_name || 'Unknown Driver'}</p>
+                    <span className="text-faint text-xs">Truck #{ts.vehicle_number}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_COLORS[ts.status]}`}>
                       {ts.status === 'submitted' ? 'Needs Approval' : ts.status}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                    <span className="text-sm text-gray-600">{ts.start_time} – {ts.end_time}</span>
-                    <span className="text-sm font-semibold text-gray-900">{ts.total_hours.toFixed(2)} hrs</span>
-                    <span className="text-xs text-gray-500">{weekOf(ts.work_date)}</span>
+                    <span className="text-sm text-dim">{ts.start_time} – {ts.end_time}</span>
+                    <span className="text-sm font-semibold text-mist">{ts.total_hours.toFixed(2)} hrs</span>
+                    <span className="text-xs text-faint">{weekOf(ts.work_date)}</span>
                     {ts.receipts.length > 0 && (
-                      <span className="flex items-center gap-1 text-xs text-blue-600">
+                      <span className="flex items-center gap-1 text-xs text-signal">
                         <Image className="w-3 h-3" />{ts.receipts.length} receipt{ts.receipts.length > 1 ? 's' : ''}
                       </span>
                     )}
@@ -395,33 +395,33 @@ export function Timesheets() {
                     <button
                       onClick={e => { e.stopPropagation(); approveTimesheet(ts.id); }}
                       disabled={approving === ts.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-all"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-ok text-[#1a1205] hover:brightness-105 text-xs font-medium rounded-lg transition-all"
                     >
-                      {approving === ts.id ? <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      {approving === ts.id ? <div className="w-3 h-3 border border-[#1a1205] border-t-transparent rounded-full animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                       Approve
                     </button>
                   )}
                   <button
                     onClick={e => openEdit(ts, e)}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                    className="p-1.5 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
                     title="Edit timesheet"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={e => { e.stopPropagation(); setConfirmDelete(ts.id); }}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    className="p-1.5 text-faint hover:text-bad hover:bg-[rgba(255,107,107,0.1)] rounded-lg transition-all"
                     title="Delete timesheet"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  {expanded === ts.id ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                  {expanded === ts.id ? <ChevronDown className="w-4 h-4 text-faint" /> : <ChevronRight className="w-4 h-4 text-faint" />}
                 </div>
               </button>
 
               {/* Expanded detail */}
               {expanded === ts.id && (
-                <div className="border-t border-gray-100 px-5 py-4 space-y-5 bg-gray-50">
+                <div className="border-t border-edge px-5 py-4 space-y-5 bg-glass2">
                   {/* Hours detail */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
@@ -430,9 +430,9 @@ export function Timesheets() {
                       { label: 'Total Hours', value: ts.total_hours.toFixed(2) },
                       { label: 'Lunch', value: ts.lunch_start && ts.lunch_end ? `${ts.lunch_start}–${ts.lunch_end}` : '—' },
                     ].map(({ label, value }) => (
-                      <div key={label} className="bg-white rounded-lg p-3 border border-gray-200">
-                        <p className="text-xs text-gray-500 uppercase tracking-wider mb-0.5">{label}</p>
-                        <p className="font-semibold text-gray-900">{value}</p>
+                      <div key={label} className="card rounded-lg p-3">
+                        <p className="text-xs text-faint uppercase tracking-wider mb-0.5">{label}</p>
+                        <p className="font-semibold text-mist">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -440,30 +440,30 @@ export function Timesheets() {
                   {/* Stops table */}
                   {ts.stops.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Stops</p>
-                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <p className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Stops</p>
+                      <div className="card rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
-                          <thead className="bg-gray-50 border-b border-gray-200">
+                          <thead className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
                             <tr>
-                              <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Vendor</th>
-                              <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">City/Address</th>
-                              <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Arrive</th>
-                              <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Depart</th>
-                              <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Toll</th>
-                              <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Delay</th>
+                              <th className="text-left px-3 py-2 text-xs font-medium text-faint uppercase tracking-wide">Vendor</th>
+                              <th className="text-left px-3 py-2 text-xs font-medium text-faint uppercase tracking-wide">City/Address</th>
+                              <th className="text-left px-3 py-2 text-xs font-medium text-faint uppercase tracking-wide">Arrive</th>
+                              <th className="text-left px-3 py-2 text-xs font-medium text-faint uppercase tracking-wide">Depart</th>
+                              <th className="text-left px-3 py-2 text-xs font-medium text-faint uppercase tracking-wide">Toll</th>
+                              <th className="text-left px-3 py-2 text-xs font-medium text-faint uppercase tracking-wide">Delay</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-100">
+                          <tbody className="divide-y divide-edge">
                             {ts.stops.map(stop => (
-                              <tr key={stop.id} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 font-medium text-gray-900">{stop.vendor_name}</td>
-                                <td className="px-3 py-2 text-gray-600">{stop.city_address}</td>
-                                <td className="px-3 py-2 text-gray-700">{stop.arrive_time}</td>
-                                <td className="px-3 py-2 text-gray-700">{stop.departure_time}</td>
-                                <td className="px-3 py-2 text-rose-600 font-medium text-sm">
+                              <tr key={stop.id} className="hover:bg-glass2">
+                                <td className="px-3 py-2 font-medium text-mist">{stop.vendor_name}</td>
+                                <td className="px-3 py-2 text-dim">{stop.city_address}</td>
+                                <td className="px-3 py-2 text-dim">{stop.arrive_time}</td>
+                                <td className="px-3 py-2 text-dim">{stop.departure_time}</td>
+                                <td className="px-3 py-2 text-bad font-medium text-sm">
                                   {stop.toll_amount != null && stop.toll_amount > 0 ? `$${Number(stop.toll_amount).toFixed(2)}` : '—'}
                                 </td>
-                                <td className="px-3 py-2 text-amber-600 text-xs">{stop.delay_reason || '—'}</td>
+                                <td className="px-3 py-2 text-signal text-xs">{stop.delay_reason || '—'}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -476,21 +476,21 @@ export function Timesheets() {
                   {(ts.fuel_gallons || ts.fuel_dollars || ts.toll_total) && (
                     <div className="flex flex-wrap gap-3">
                       {ts.fuel_gallons != null && ts.fuel_gallons > 0 && (
-                        <div className="bg-white rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-0.5">Fuel Gallons</p>
-                          <p className="font-semibold text-gray-900">{ts.fuel_gallons}</p>
+                        <div className="card rounded-lg p-3">
+                          <p className="text-xs text-faint uppercase tracking-wider mb-0.5">Fuel Gallons</p>
+                          <p className="font-semibold text-mist">{ts.fuel_gallons}</p>
                         </div>
                       )}
                       {ts.fuel_dollars != null && ts.fuel_dollars > 0 && (
-                        <div className="bg-white rounded-lg p-3 border border-gray-200">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-0.5">Fuel Spend</p>
-                          <p className="font-semibold text-gray-900">${ts.fuel_dollars.toFixed(2)}</p>
+                        <div className="card rounded-lg p-3">
+                          <p className="text-xs text-faint uppercase tracking-wider mb-0.5">Fuel Spend</p>
+                          <p className="font-semibold text-mist">${ts.fuel_dollars.toFixed(2)}</p>
                         </div>
                       )}
                       {ts.toll_total != null && ts.toll_total > 0 && (
-                        <div className="bg-rose-50 rounded-lg p-3 border border-rose-200">
-                          <p className="text-xs text-rose-500 uppercase tracking-wider mb-0.5">Total Tolls</p>
-                          <p className="font-semibold text-rose-700">${ts.toll_total.toFixed(2)}</p>
+                        <div className="bg-[rgba(255,107,107,0.1)] border border-[rgba(255,107,107,0.35)] rounded-lg p-3">
+                          <p className="text-xs text-bad uppercase tracking-wider mb-0.5">Total Tolls</p>
+                          <p className="font-semibold text-bad">${ts.toll_total.toFixed(2)}</p>
                         </div>
                       )}
                     </div>
@@ -498,16 +498,16 @@ export function Timesheets() {
 
                   {/* Notes */}
                   {ts.notes && (
-                    <div className="bg-white rounded-lg p-3 border border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Notes</p>
-                      <p className="text-gray-700 text-sm">{ts.notes}</p>
+                    <div className="card rounded-lg p-3">
+                      <p className="text-xs text-faint uppercase tracking-wider mb-1">Notes</p>
+                      <p className="text-dim text-sm">{ts.notes}</p>
                     </div>
                   )}
 
                   {/* Receipts */}
                   {ts.receipts.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Receipt Images</p>
+                      <p className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Receipt Images</p>
                       <div className="flex flex-wrap gap-2">
                         {ts.receipts.map(r => (
                           <button
@@ -515,8 +515,8 @@ export function Timesheets() {
                             onClick={() => openReceipt(r.storage_path)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                               r.receipt_type === 'toll'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                                : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                ? 'bg-glass2 text-dim border-edge hover:bg-glass2'
+                                : 'bg-signal-dim text-signal border-[rgba(255,201,60,0.35)] hover:brightness-110'
                             }`}
                           >
                             <Image className="w-4 h-4" />
@@ -534,21 +534,21 @@ export function Timesheets() {
                       <button
                         onClick={() => approveTimesheet(ts.id)}
                         disabled={approving === ts.id}
-                        className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-2.5 bg-ok text-[#1a1205] hover:brightness-105 font-medium rounded-xl transition-all flex items-center justify-center gap-2"
                       >
-                        {approving === ts.id ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                        {approving === ts.id ? <div className="w-4 h-4 border-2 border-[#1a1205] border-t-transparent rounded-full animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                         Approve Timesheet
                       </button>
                     )}
                     {ts.status === 'approved' && (
-                      <div className="flex items-center justify-center gap-2 py-2 text-green-600 flex-1">
+                      <div className="flex items-center justify-center gap-2 py-2 text-ok flex-1">
                         <CheckCircle className="w-4 h-4" />
                         <span className="text-sm font-medium">Approved</span>
                       </div>
                     )}
                     <button
                       onClick={e => openEdit(ts, e)}
-                      className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-all text-sm"
+                      className="gbtn-ghost flex items-center justify-center gap-2 px-5 py-2.5 font-medium text-sm"
                     >
                       <Edit2 className="w-4 h-4" /> Edit
                     </button>
@@ -566,31 +566,31 @@ export function Timesheets() {
         if (!ts) return null;
         return (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-6 space-y-4">
+            <div className="card rounded-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Trash2 className="w-5 h-5 text-red-600" />
+                <div className="w-10 h-10 bg-[rgba(255,107,107,0.12)] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-bad" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Delete Timesheet?</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">This cannot be undone.</p>
+                  <h3 className="font-semibold text-mist">Delete Timesheet?</h3>
+                  <p className="text-sm text-faint mt-0.5">This cannot be undone.</p>
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 space-y-1">
+              <div className="bg-glass2 rounded-xl p-3 text-sm text-dim space-y-1">
                 <p><span className="font-medium">{ts.driver_name || 'Unknown Driver'}</span> — Truck #{ts.vehicle_number}</p>
-                <p className="text-gray-500">{new Date(ts.work_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} &middot; {ts.total_hours.toFixed(2)} hrs</p>
+                <p className="text-faint">{new Date(ts.work_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} &middot; {ts.total_hours.toFixed(2)} hrs</p>
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   onClick={() => setConfirmDelete(null)}
-                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all"
+                  className="gbtn-ghost flex-1 py-2.5 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => deleteTimesheet(confirmDelete)}
                   disabled={deleting === confirmDelete}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-bad text-white hover:brightness-105 disabled:opacity-60 text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   {deleting === confirmDelete
                     ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</>
@@ -606,16 +606,16 @@ export function Timesheets() {
       {/* Edit modal */}
       {editingTs && editForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl my-6">
+          <div className="card rounded-2xl w-full max-w-3xl my-6">
             {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-edge">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Edit Timesheet</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <h2 className="text-lg font-semibold text-mist">Edit Timesheet</h2>
+                <p className="text-sm text-faint mt-0.5">
                   {editingTs.driver_name} — {new Date(editingTs.work_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
-              <button onClick={closeEdit} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
+              <button onClick={closeEdit} className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -626,12 +626,12 @@ export function Timesheets() {
                 <p className={labelCls}>Driver Info</p>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">Driver Name</label>
+                    <label className="block text-xs text-faint mb-1">Driver Name</label>
                     <input className={inputCls} value={editForm.driver_name}
                       onChange={e => setEditForm(f => f ? { ...f, driver_name: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Truck #</label>
+                    <label className="block text-xs text-faint mb-1">Truck #</label>
                     <input className={inputCls} value={editForm.vehicle_number}
                       onChange={e => setEditForm(f => f ? { ...f, vehicle_number: e.target.value } : f)} />
                   </div>
@@ -643,34 +643,34 @@ export function Timesheets() {
                 <p className={labelCls}>Date & Hours</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Work Date</label>
+                    <label className="block text-xs text-faint mb-1">Work Date</label>
                     <input type="date" className={inputCls} value={editForm.work_date}
                       onChange={e => setEditForm(f => f ? { ...f, work_date: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Start Time</label>
+                    <label className="block text-xs text-faint mb-1">Start Time</label>
                     <input type="time" className={inputCls} value={editForm.start_time}
                       onChange={e => setEditForm(f => f ? { ...f, start_time: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">End Time</label>
+                    <label className="block text-xs text-faint mb-1">End Time</label>
                     <input type="time" className={inputCls} value={editForm.end_time}
                       onChange={e => setEditForm(f => f ? { ...f, end_time: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Total Hours</label>
+                    <label className="block text-xs text-faint mb-1">Total Hours</label>
                     <input type="number" step="0.01" min="0" className={inputCls} value={editForm.total_hours}
                       onChange={e => setEditForm(f => f ? { ...f, total_hours: e.target.value } : f)} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Lunch Start</label>
+                    <label className="block text-xs text-faint mb-1">Lunch Start</label>
                     <input type="time" className={inputCls} value={editForm.lunch_start}
                       onChange={e => setEditForm(f => f ? { ...f, lunch_start: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Lunch End</label>
+                    <label className="block text-xs text-faint mb-1">Lunch End</label>
                     <input type="time" className={inputCls} value={editForm.lunch_end}
                       onChange={e => setEditForm(f => f ? { ...f, lunch_end: e.target.value } : f)} />
                   </div>
@@ -682,17 +682,17 @@ export function Timesheets() {
                 <p className={labelCls}>Fuel & Tolls</p>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Fuel Gallons</label>
+                    <label className="block text-xs text-faint mb-1">Fuel Gallons</label>
                     <input type="number" step="0.001" min="0" className={inputCls} value={editForm.fuel_gallons} placeholder="0.000"
                       onChange={e => setEditForm(f => f ? { ...f, fuel_gallons: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Fuel Dollars ($)</label>
+                    <label className="block text-xs text-faint mb-1">Fuel Dollars ($)</label>
                     <input type="number" step="0.01" min="0" className={inputCls} value={editForm.fuel_dollars} placeholder="0.00"
                       onChange={e => setEditForm(f => f ? { ...f, fuel_dollars: e.target.value } : f)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Total Tolls ($)</label>
+                    <label className="block text-xs text-faint mb-1">Total Tolls ($)</label>
                     <input type="number" step="0.01" min="0" className={inputCls} value={editForm.toll_total} placeholder="0.00"
                       onChange={e => setEditForm(f => f ? { ...f, toll_total: e.target.value } : f)} />
                   </div>
@@ -713,58 +713,58 @@ export function Timesheets() {
                   <button
                     type="button"
                     onClick={() => setEditStops(s => [...s, { ...BLANK_STOP }])}
-                    className="flex items-center gap-1.5 text-xs font-medium text-gray-700 hover:text-gray-900 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                    className="gbtn-ghost flex items-center gap-1.5 text-xs font-medium px-3 py-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Stop
                   </button>
                 </div>
 
                 {editStops.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic py-2">No stops recorded.</p>
+                  <p className="text-sm text-faint italic py-2">No stops recorded.</p>
                 ) : (
                   <div className="space-y-3">
                     {editStops.map((stop, idx) => (
-                      <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+                      <div key={idx} className="bg-glass2 rounded-xl p-4 border border-edge space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-gray-500">Stop {idx + 1}</span>
+                          <span className="text-xs font-semibold text-faint">Stop {idx + 1}</span>
                           <button
                             type="button"
                             onClick={() => setEditStops(s => s.filter((_, i) => i !== idx))}
-                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                            className="p-1 text-faint hover:text-bad hover:bg-[rgba(255,107,107,0.1)] rounded-md transition-all"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Vendor Name</label>
+                            <label className="block text-xs text-faint mb-1">Vendor Name</label>
                             <input className={inputCls} value={stop.vendor_name} placeholder="Vendor / Location"
                               onChange={e => setEditStops(s => s.map((x, i) => i === idx ? { ...x, vendor_name: e.target.value } : x))} />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">City / Address</label>
+                            <label className="block text-xs text-faint mb-1">City / Address</label>
                             <input className={inputCls} value={stop.city_address} placeholder="City, State"
                               onChange={e => setEditStops(s => s.map((x, i) => i === idx ? { ...x, city_address: e.target.value } : x))} />
                           </div>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Arrive</label>
+                            <label className="block text-xs text-faint mb-1">Arrive</label>
                             <input type="time" className={inputCls} value={stop.arrive_time}
                               onChange={e => setEditStops(s => s.map((x, i) => i === idx ? { ...x, arrive_time: e.target.value } : x))} />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Depart</label>
+                            <label className="block text-xs text-faint mb-1">Depart</label>
                             <input type="time" className={inputCls} value={stop.departure_time}
                               onChange={e => setEditStops(s => s.map((x, i) => i === idx ? { ...x, departure_time: e.target.value } : x))} />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Toll ($)</label>
+                            <label className="block text-xs text-faint mb-1">Toll ($)</label>
                             <input type="number" step="0.01" min="0" className={inputCls} value={stop.toll_amount} placeholder="0.00"
                               onChange={e => setEditStops(s => s.map((x, i) => i === idx ? { ...x, toll_amount: e.target.value } : x))} />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">Delay Reason</label>
+                            <label className="block text-xs text-faint mb-1">Delay Reason</label>
                             <input className={inputCls} value={stop.delay_reason} placeholder="Optional"
                               onChange={e => setEditStops(s => s.map((x, i) => i === idx ? { ...x, delay_reason: e.target.value } : x))} />
                           </div>
@@ -779,21 +779,21 @@ export function Timesheets() {
             {/* Modal footer */}
             <div className="px-6 pb-6 space-y-3">
               {saveError && (
-                <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                <div className="flex items-start gap-2 px-4 py-3 bg-[rgba(255,107,107,0.1)] border border-[rgba(255,107,107,0.35)] rounded-xl text-sm text-bad">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{saveError}</span>
                 </div>
               )}
               <div className="flex gap-3">
                 <button type="button" onClick={closeEdit}
-                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all">
+                  className="gbtn-ghost flex-1 py-2.5 text-sm font-medium">
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={saveEdit}
                   disabled={saving}
-                  className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="gbtn flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
                 >
                   {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Changes</>}
                 </button>

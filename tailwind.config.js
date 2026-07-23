@@ -4,13 +4,23 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Geist', 'system-ui', 'sans-serif'],
-        serif: ['Crimson Text', 'serif'],
+        sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'system-ui', 'sans-serif'],
+        serif: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
       },
       colors: {
-        primary: '#f5f5f5',
-        secondary: '#2a2a2a',
-        accent: '#6b6b6b',
+        // Meiborg dark-glass tokens
+        bg: '#161a21',
+        signal: '#ffc93c',
+        'signal-dim': 'rgba(255, 201, 60, 0.14)',
+        mist: '#edf1f7',
+        dim: '#c0cad7',
+        faint: '#95a2b2',
+        ok: '#4bd3a0',
+        bad: '#ff6b6b',
+        edge: 'rgba(255, 255, 255, 0.09)',
+        edge2: 'rgba(255, 255, 255, 0.17)',
+        glass: 'rgba(26, 30, 38, 0.60)',
+        glass2: 'rgba(255, 255, 255, 0.055)',
       },
       keyframes: {
         shrink: {

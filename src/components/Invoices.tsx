@@ -169,11 +169,11 @@ export function Invoices() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-emerald-500/20 text-emerald-400';
+        return 'bg-[rgba(75,211,160,0.12)] text-ok';
       case 'sent':
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-glass2 text-dim';
       default:
-        return 'bg-amber-500/20 text-amber-400';
+        return 'bg-signal-dim text-signal';
     }
   };
 
@@ -184,9 +184,9 @@ export function Invoices() {
   if (loading) {
     return (
       <div className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-slate-800 rounded w-1/4"></div>
-          <div className="h-96 bg-slate-800 rounded-xl"></div>
+        <div className="space-y-4">
+          <div className="h-10 skeleton w-1/4"></div>
+          <div className="h-96 skeleton rounded-xl"></div>
         </div>
       </div>
     );
@@ -196,13 +196,13 @@ export function Invoices() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Invoices</h1>
-          <p className="text-slate-400 mt-1">Generate and manage billing invoices for Geodis at $79/hour</p>
+          <h1 className="text-3xl font-light text-mist tracking-tight">Invoices</h1>
+          <p className="text-faint mt-1">Generate and manage billing invoices for Geodis at $79/hour</p>
         </div>
         <button
           onClick={openModal}
           disabled={drivers.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 disabled:cursor-not-allowed text-white font-medium rounded-lg shadow-lg shadow-amber-500/20 transition-all"
+          className="gbtn flex items-center gap-2 px-4 py-2"
         >
           <Plus className="w-4 h-4" />
           Create Invoice
@@ -210,84 +210,84 @@ export function Invoices() {
       </div>
 
       {drivers.length === 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-6">
-          <p className="text-amber-400 text-sm">
+        <div className="bg-signal-dim border border-[rgba(255,201,60,0.35)] rounded-lg p-4 mb-6">
+          <p className="text-signal text-sm">
             No drivers found. Please add drivers and log hours before creating invoices.
           </p>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-6">
+        <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-400 text-sm">Total Invoiced</p>
-              <p className="text-3xl font-bold text-white">{formatCurrency(totalInvoiced)}</p>
+              <p className="text-faint text-sm">Total Invoiced</p>
+              <p className="text-3xl font-light text-mist tracking-tight">{formatCurrency(totalInvoiced)}</p>
             </div>
-            <div className="w-12 h-12 bg-slate-500/20 rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-slate-400" />
+            <div className="w-12 h-12 bg-glass2 rounded-lg flex items-center justify-center">
+              <FileText className="w-6 h-6 text-faint" />
             </div>
           </div>
         </div>
 
-        <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-6">
+        <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-400 text-sm">Pending</p>
-              <p className="text-3xl font-bold text-amber-400">{formatCurrency(totalPending)}</p>
+              <p className="text-faint text-sm">Pending</p>
+              <p className="text-3xl font-light text-signal tracking-tight">{formatCurrency(totalPending)}</p>
             </div>
-            <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
-              <Send className="w-6 h-6 text-amber-400" />
+            <div className="w-12 h-12 bg-signal-dim rounded-lg flex items-center justify-center">
+              <Send className="w-6 h-6 text-signal" />
             </div>
           </div>
         </div>
 
-        <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl p-6">
+        <div className="card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-400 text-sm">Received</p>
-              <p className="text-3xl font-bold text-emerald-400">{formatCurrency(totalPaid)}</p>
+              <p className="text-faint text-sm">Received</p>
+              <p className="text-3xl font-light text-ok tracking-tight">{formatCurrency(totalPaid)}</p>
             </div>
-            <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <Check className="w-6 h-6 text-emerald-400" />
+            <div className="w-12 h-12 bg-[rgba(75,211,160,0.12)] rounded-lg flex items-center justify-center">
+              <Check className="w-6 h-6 text-ok" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-xl overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-900/50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Invoice #</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Driver</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Period</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Hours</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</th>
+              <tr className="bg-[rgba(23,26,32,0.94)] backdrop-blur">
+                <th className="px-6 py-3 text-left text-xs font-medium text-faint uppercase tracking-wider">Invoice #</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-faint uppercase tracking-wider">Driver</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-faint uppercase tracking-wider">Period</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-faint uppercase tracking-wider">Hours</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-faint uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-faint uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-faint uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-edge">
               {invoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-slate-700/30 transition-colors">
+                <tr key={invoice.id} className="hover:bg-glass2 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-white font-mono">{invoice.invoice_number}</span>
+                    <span className="text-mist font-mono">{invoice.invoice_number}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-300">{invoice.driver?.name || 'Unknown'}</span>
+                      <Truck className="w-4 h-4 text-faint" />
+                      <span className="text-dim">{invoice.driver?.name || 'Unknown'}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-slate-400 text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-faint text-sm">
                     {new Date(invoice.date_from).toLocaleDateString()} - {new Date(invoice.date_to).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-white">
+                  <td className="px-6 py-4 whitespace-nowrap text-mist">
                     {Number(invoice.total_hours).toFixed(1)} hrs
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-emerald-400 font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-ok font-medium">
                     {formatCurrency(invoice.total_amount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -298,7 +298,7 @@ export function Invoices() {
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <button
                       onClick={() => openPreview(invoice)}
-                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all"
+                      className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
                       title="View Invoice"
                     >
                       <Eye className="w-4 h-4" />
@@ -306,7 +306,7 @@ export function Invoices() {
                     {invoice.status === 'pending' && (
                       <button
                         onClick={() => updateInvoiceStatus(invoice.id, 'sent')}
-                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-slate-700 rounded-lg transition-all"
+                        className="p-2 text-faint hover:text-signal hover:bg-glass2 rounded-lg transition-all"
                         title="Mark as Sent"
                       >
                         <Send className="w-4 h-4" />
@@ -315,7 +315,7 @@ export function Invoices() {
                     {(invoice.status === 'pending' || invoice.status === 'sent') && (
                       <button
                         onClick={() => updateInvoiceStatus(invoice.id, 'paid')}
-                        className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded-lg transition-all"
+                        className="p-2 text-faint hover:text-ok hover:bg-glass2 rounded-lg transition-all"
                         title="Mark as Paid"
                       >
                         <Check className="w-4 h-4" />
@@ -326,7 +326,7 @@ export function Invoices() {
               ))}
               {invoices.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-6 py-12 text-center text-faint">
                     No invoices created yet. Create an invoice from unbilled hours.
                   </td>
                 </tr>
@@ -339,12 +339,12 @@ export function Invoices() {
       {/* Create Invoice Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between p-6 border-b border-slate-700">
-              <h2 className="text-xl font-semibold text-white">Create Invoice for Geodis</h2>
+          <div className="bg-[#1b1f27] border border-edge2 rounded-xl w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b border-edge">
+              <h2 className="text-xl font-semibold text-mist">Create Invoice for Geodis</h2>
               <button
                 onClick={closeModal}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all"
+                className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -352,14 +352,14 @@ export function Invoices() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-dim mb-2">
                   Driver
                 </label>
                 <select
                   value={formData.driver_id}
                   onChange={(e) => setFormData({ ...formData, driver_id: e.target.value })}
                   required
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  className="ginput w-full px-4 py-3"
                 >
                   <option value="">Select a driver</option>
                   {drivers.map((driver) => (
@@ -372,7 +372,7 @@ export function Invoices() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-dim mb-2">
                     From Date
                   </label>
                   <input
@@ -380,11 +380,11 @@ export function Invoices() {
                     value={formData.date_from}
                     onChange={(e) => setFormData({ ...formData, date_from: e.target.value })}
                     required
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                    className="ginput w-full px-4 py-3"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-dim mb-2">
                     To Date
                   </label>
                   <input
@@ -392,36 +392,36 @@ export function Invoices() {
                     value={formData.date_to}
                     onChange={(e) => setFormData({ ...formData, date_to: e.target.value })}
                     required
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                    className="ginput w-full px-4 py-3"
                   />
                 </div>
               </div>
 
               {draftTotal && (
-                <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
+                <div className="bg-glass2 border border-edge rounded-lg p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-slate-400 text-sm">Hours to Bill</p>
-                      <p className="text-xl font-bold text-white">{draftTotal.hours.toFixed(1)} hrs</p>
+                      <p className="text-faint text-sm">Hours to Bill</p>
+                      <p className="text-xl font-light text-mist">{draftTotal.hours.toFixed(1)} hrs</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-slate-400 text-sm">Total Amount</p>
-                      <p className="text-xl font-bold text-emerald-400">{formatCurrency(draftTotal.amount)}</p>
-                      <p className="text-xs text-slate-500">@ $79/hour</p>
+                      <p className="text-faint text-sm">Total Amount</p>
+                      <p className="text-xl font-light text-ok">{formatCurrency(draftTotal.amount)}</p>
+                      <p className="text-xs text-faint">@ $79/hour</p>
                     </div>
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-dim mb-2">
                   Notes (Optional)
                 </label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none"
+                  className="ginput w-full px-4 py-3 resize-none"
                   placeholder="Additional invoice notes..."
                 />
               </div>
@@ -430,14 +430,14 @@ export function Invoices() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all"
+                  className="gbtn-ghost flex-1 px-4 py-3"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving || !draftTotal || draftTotal.hours === 0}
-                  className="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-500/50 text-white font-medium rounded-lg transition-all"
+                  className="gbtn flex-1 px-4 py-3"
                 >
                   {saving ? 'Creating...' : 'Create Invoice'}
                 </button>
@@ -450,12 +450,12 @@ export function Invoices() {
       {/* Invoice Preview Modal */}
       {showPreview && previewInvoice && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl shadow-xl text-slate-900">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <div className="bg-[#1b1f27] border border-edge2 rounded-xl w-full max-w-2xl shadow-xl text-mist">
+            <div className="flex items-center justify-between p-6 border-b border-edge">
               <h2 className="text-xl font-semibold">Invoice {previewInvoice.invoice_number}</h2>
               <button
                 onClick={() => setShowPreview(false)}
-                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                className="p-2 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -466,33 +466,33 @@ export function Invoices() {
               <div className="flex justify-between mb-8">
                 <div>
                   <h3 className="font-bold text-lg">Meiborg</h3>
-                  <p className="text-sm text-slate-600">Driver Management</p>
+                  <p className="text-sm text-dim">Driver Management</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-slate-600">Bill To:</p>
+                  <p className="text-sm text-dim">Bill To:</p>
                   <p className="font-semibold">Geodis</p>
-                  <p className="text-sm text-slate-600">Global Logistics</p>
+                  <p className="text-sm text-dim">Global Logistics</p>
                 </div>
               </div>
 
               {/* Details */}
-              <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-slate-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-glass2 rounded-lg">
                 <div>
-                  <p className="text-sm text-slate-600">Invoice Number</p>
+                  <p className="text-sm text-faint">Invoice Number</p>
                   <p className="font-medium">{previewInvoice.invoice_number}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Driver</p>
+                  <p className="text-sm text-faint">Driver</p>
                   <p className="font-medium">{previewInvoice.driver?.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Period</p>
+                  <p className="text-sm text-faint">Period</p>
                   <p className="font-medium">
                     {new Date(previewInvoice.date_from).toLocaleDateString()} - {new Date(previewInvoice.date_to).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600">Status</p>
+                  <p className="text-sm text-faint">Status</p>
                   <p className="font-medium capitalize">{previewInvoice.status}</p>
                 </div>
               </div>
@@ -500,15 +500,15 @@ export function Invoices() {
               {/* Line Items */}
               <table className="w-full mb-6">
                 <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-2 text-sm text-slate-600">Description</th>
-                    <th className="text-right py-2 text-sm text-slate-600">Hours</th>
-                    <th className="text-right py-2 text-sm text-slate-600">Rate</th>
-                    <th className="text-right py-2 text-sm text-slate-600">Amount</th>
+                  <tr className="border-b border-edge">
+                    <th className="text-left py-2 text-sm text-faint">Description</th>
+                    <th className="text-right py-2 text-sm text-faint">Hours</th>
+                    <th className="text-right py-2 text-sm text-faint">Rate</th>
+                    <th className="text-right py-2 text-sm text-faint">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-slate-200">
+                  <tr className="border-b border-edge">
                     <td className="py-3">Driver Services - {previewInvoice.driver?.name}</td>
                     <td className="text-right">{Number(previewInvoice.total_hours).toFixed(1)}</td>
                     <td className="text-right">$79.00</td>
@@ -520,7 +520,7 @@ export function Invoices() {
               {/* Total */}
               <div className="flex justify-end">
                 <div className="w-64">
-                  <div className="flex justify-between py-2 border-t-2 border-slate-900">
+                  <div className="flex justify-between py-2 border-t-2 border-edge2">
                     <span className="font-bold">Total Due</span>
                     <span className="font-bold text-lg">{formatCurrency(previewInvoice.total_amount)}</span>
                   </div>
@@ -529,17 +529,17 @@ export function Invoices() {
 
               {/* Notes */}
               {previewInvoice.notes && (
-                <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-600">Notes:</p>
+                <div className="mt-6 p-4 bg-glass2 rounded-lg">
+                  <p className="text-sm text-faint">Notes:</p>
                   <p className="text-sm">{previewInvoice.notes}</p>
                 </div>
               )}
             </div>
 
-            <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
+            <div className="p-6 border-t border-edge flex justify-end gap-3">
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-medium rounded-lg transition-all"
+                className="gbtn-ghost px-4 py-2"
               >
                 Close
               </button>

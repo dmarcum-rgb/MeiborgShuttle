@@ -181,20 +181,20 @@ export function FuelReceipts() {
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-  const inputCls = 'w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-800 transition-all';
-  const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5';
+  const inputCls = 'w-full px-3 py-2.5 ginput text-sm';
+  const labelCls = 'block text-sm font-medium text-dim mb-1.5';
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 font-serif">Fuel Receipts</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Track fuel purchases for all drivers</p>
+          <h1 className="text-2xl font-light tracking-tight text-mist">Fuel Receipts</h1>
+          <p className="text-faint text-sm mt-0.5">Track fuel purchases for all drivers</p>
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-xl transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 gbtn text-sm font-medium transition-all"
         >
           <Plus className="w-4 h-4" />
           Add Receipt
@@ -203,85 +203,85 @@ export function FuelReceipts() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center mb-3">
-            <Fuel className="w-4 h-4 text-amber-600" />
+        <div className="card p-4">
+          <div className="w-9 h-9 bg-signal-dim rounded-lg flex items-center justify-center mb-3">
+            <Fuel className="w-4 h-4 text-signal" />
           </div>
-          <p className="text-2xl font-semibold text-gray-900">{fmt(totalAmount)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Fuel Expenses</p>
+          <p className="text-2xl font-semibold text-mist">{fmt(totalAmount)}</p>
+          <p className="text-xs text-faint mt-0.5">Total Fuel Expenses</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
-            <Fuel className="w-4 h-4 text-blue-600" />
+        <div className="card p-4">
+          <div className="w-9 h-9 bg-glass2 rounded-lg flex items-center justify-center mb-3">
+            <Fuel className="w-4 h-4 text-dim" />
           </div>
-          <p className="text-2xl font-semibold text-gray-900">{totalGallons.toFixed(3)} gal</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Gallons</p>
+          <p className="text-2xl font-semibold text-mist">{totalGallons.toFixed(3)} gal</p>
+          <p className="text-xs text-faint mt-0.5">Total Gallons</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center mb-3">
-            <FileText className="w-4 h-4 text-gray-600" />
+        <div className="card p-4">
+          <div className="w-9 h-9 bg-glass2 rounded-lg flex items-center justify-center mb-3">
+            <FileText className="w-4 h-4 text-faint" />
           </div>
-          <p className="text-2xl font-semibold text-gray-900">{rows.length}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Total Entries</p>
+          <p className="text-2xl font-semibold text-mist">{rows.length}</p>
+          <p className="text-xs text-faint mt-0.5">Total Entries</p>
         </div>
       </div>
 
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-edge border-t-signal rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
                 <tr>
                   {['Date', 'Driver', 'Truck #', 'Location', 'Gallons', 'Amount', 'Receipt', 'Source', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-faint uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-edge">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center text-gray-400">
+                    <td colSpan={9} className="px-6 py-12 text-center text-faint">
                       <Fuel className="w-8 h-8 mx-auto mb-2 opacity-30" />
                       No fuel receipts recorded yet.
                     </td>
                   </tr>
                 ) : rows.map(row => (
-                  <tr key={`${row.source}-${row.id}`} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-900 whitespace-nowrap font-medium">
+                  <tr key={`${row.source}-${row.id}`} className="hover:bg-glass2 transition-colors">
+                    <td className="px-4 py-3 text-mist whitespace-nowrap font-medium">
                       {new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3 text-gray-900">
+                    <td className="px-4 py-3 text-mist">
                       <div className="flex items-center gap-1.5">
-                        <Truck className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <Truck className="w-3.5 h-3.5 text-faint flex-shrink-0" />
                         {row.driver_name || '—'}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-dim">
                       {row.vehicle_number ? `#${row.vehicle_number}` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-dim">
                       {row.location || '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-dim whitespace-nowrap">
                       {row.gallons != null ? `${row.gallons.toFixed(3)} gal` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-amber-700 font-semibold whitespace-nowrap">
+                    <td className="px-4 py-3 text-signal font-semibold whitespace-nowrap">
                       {row.amount != null ? fmt(row.amount) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       {row.receiptImageUrls.length > 0 ? (
                         <button
                           onClick={() => setLightbox({ urls: row.receiptImageUrls, index: 0 })}
-                          className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 transition-colors group"
+                          className="flex items-center gap-1.5 text-signal hover:brightness-110 transition-all group"
                         >
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 group-hover:border-blue-300 transition-colors flex-shrink-0">
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-edge group-hover:border-edge2 transition-colors flex-shrink-0">
                             <img
                               src={row.receiptImageUrls[0]}
                               alt="Receipt"
@@ -298,18 +298,18 @@ export function FuelReceipts() {
                           </span>
                         </button>
                       ) : (
-                        <span className="text-gray-400 text-xs">
+                        <span className="text-faint text-xs">
                           {row.receipt_number || '—'}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {row.source === 'timesheet' ? (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-glass2 text-dim font-medium">
                           <FileText className="w-3 h-3" /> Timesheet
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-glass2 text-faint font-medium">
                           Manual
                         </span>
                       )}
@@ -319,14 +319,14 @@ export function FuelReceipts() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openEdit(row)}
-                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                            className="p-1.5 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(row)}
                             disabled={deleting === row.id}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            className="p-1.5 text-faint hover:text-bad hover:bg-[rgba(255,107,107,0.1)] rounded-lg transition-all"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -348,16 +348,16 @@ export function FuelReceipts() {
           onClick={() => setLightbox(null)}
         >
           <div
-            className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden"
+            className="relative card max-w-3xl w-full overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-edge">
               <div className="flex items-center gap-2">
-                <Image className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-semibold text-gray-900">
+                <Image className="w-4 h-4 text-faint" />
+                <span className="text-sm font-semibold text-mist">
                   Fuel Receipt
                   {lightbox.urls.length > 1 && (
-                    <span className="text-gray-400 font-normal ml-1">
+                    <span className="text-faint font-normal ml-1">
                       {lightbox.index + 1} / {lightbox.urls.length}
                     </span>
                   )}
@@ -365,12 +365,12 @@ export function FuelReceipts() {
               </div>
               <button
                 onClick={() => setLightbox(null)}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                className="p-1.5 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="relative bg-gray-50">
+            <div className="relative bg-[#1b1f27]">
               <img
                 src={lightbox.urls[lightbox.index]}
                 alt={`Receipt ${lightbox.index + 1}`}
@@ -381,14 +381,14 @@ export function FuelReceipts() {
                   <button
                     onClick={() => setLightbox(l => l && l.index > 0 ? { ...l, index: l.index - 1 } : l)}
                     disabled={lightbox.index === 0}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-md text-gray-700 disabled:opacity-30 transition-all"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-[#1b1f27] border border-edge2 hover:bg-glass2 rounded-full shadow-md text-mist disabled:opacity-30 transition-all"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setLightbox(l => l && l.index < l.urls.length - 1 ? { ...l, index: l.index + 1 } : l)}
                     disabled={lightbox.index === lightbox.urls.length - 1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-md text-gray-700 disabled:opacity-30 transition-all"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-[#1b1f27] border border-edge2 hover:bg-glass2 rounded-full shadow-md text-mist disabled:opacity-30 transition-all"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -396,12 +396,12 @@ export function FuelReceipts() {
               )}
             </div>
             {lightbox.urls.length > 1 && (
-              <div className="flex gap-2 p-3 bg-white overflow-x-auto">
+              <div className="flex gap-2 p-3 bg-[#1b1f27] overflow-x-auto">
                 {lightbox.urls.map((url, i) => (
                   <button
                     key={i}
                     onClick={() => setLightbox(l => l ? { ...l, index: i } : l)}
-                    className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${i === lightbox.index ? 'border-blue-500' : 'border-gray-200 hover:border-gray-400'}`}
+                    className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${i === lightbox.index ? 'border-signal' : 'border-edge hover:border-edge2'}`}
                   >
                     <img src={url} alt={`Receipt ${i + 1}`} className="w-full h-full object-cover" />
                   </button>
@@ -414,12 +414,12 @@ export function FuelReceipts() {
 
       {/* Add/Edit modal */}      {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="card w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-edge">
+              <h2 className="text-lg font-semibold text-mist">
                 {editingId ? 'Edit Fuel Receipt' : 'Add Fuel Receipt'}
               </h2>
-              <button onClick={closeModal} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
+              <button onClick={closeModal} className="p-1.5 text-faint hover:text-mist hover:bg-glass2 rounded-lg transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -471,11 +471,11 @@ export function FuelReceipts() {
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeModal}
-                  className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-all">
+                  className="flex-1 py-2.5 gbtn-ghost text-sm font-medium transition-all">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white text-sm font-medium rounded-xl transition-all">
+                  className="flex-1 py-2.5 gbtn text-sm font-medium transition-all">
                   {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Add Receipt'}
                 </button>
               </div>

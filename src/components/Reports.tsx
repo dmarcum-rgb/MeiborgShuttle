@@ -331,17 +331,17 @@ export function Reports() {
   const totalHours = driverReports.reduce((a, d) => a + d.total_hours, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
+      <div className="border-b border-edge px-8 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Driver performance, stop analytics, and cost breakdowns</p>
+            <h1 className="text-3xl font-light text-mist tracking-tight">Reports</h1>
+            <p className="text-faint text-sm mt-1">Driver performance, stop analytics, and cost breakdowns</p>
           </div>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+            className="gbtn flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -356,8 +356,8 @@ export function Reports() {
               onClick={() => setPeriod(p)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${
                 period === p
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  ? 'bg-signal text-[#1a1205] border-signal'
+                  : 'text-dim border-edge hover:border-edge2'
               }`}
             >
               {p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : p === 'year' ? 'This Year' : 'Custom'}
@@ -369,14 +369,14 @@ export function Reports() {
                 type="date"
                 value={customFrom}
                 onChange={e => setCustomFrom(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="ginput px-3 py-1.5 text-sm text-mist"
               />
-              <span className="text-gray-400 text-sm">to</span>
+              <span className="text-faint text-sm">to</span>
               <input
                 type="date"
                 value={customTo}
                 onChange={e => setCustomTo(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="ginput px-3 py-1.5 text-sm text-mist"
               />
             </div>
           )}
@@ -387,32 +387,32 @@ export function Reports() {
         {/* Summary cards */}
         <div className="grid grid-cols-4 gap-4">
           {[
-            { label: 'Total Stops', value: totalDriverStops, icon: MapPin, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'Total Hours', value: totalHours.toFixed(1) + 'h', icon: Clock, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Fuel Costs', value: '$' + totalFuel.toFixed(2), icon: Fuel, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Toll Costs', value: '$' + totalTolls.toFixed(2), icon: Banknote, color: 'text-rose-600', bg: 'bg-rose-50' },
+            { label: 'Total Stops', value: totalDriverStops, icon: MapPin, color: 'text-signal', bg: 'bg-signal-dim' },
+            { label: 'Total Hours', value: totalHours.toFixed(1) + 'h', icon: Clock, color: 'text-ok', bg: 'bg-[rgba(75,211,160,0.12)]' },
+            { label: 'Fuel Costs', value: '$' + totalFuel.toFixed(2), icon: Fuel, color: 'text-signal', bg: 'bg-signal-dim' },
+            { label: 'Toll Costs', value: '$' + totalTolls.toFixed(2), icon: Banknote, color: 'text-bad', bg: 'bg-[rgba(255,107,107,0.12)]' },
           ].map(card => {
             const Icon = card.icon;
             return (
-              <div key={card.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div key={card.label} className="card p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-gray-500 text-sm">{card.label}</span>
+                  <span className="text-faint text-sm">{card.label}</span>
                   <div className={`w-8 h-8 ${card.bg} rounded-lg flex items-center justify-center`}>
                     <Icon className={`w-4 h-4 ${card.color}`} />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{loading ? '—' : card.value}</p>
+                <p className="text-2xl font-semibold text-mist">{loading ? '—' : card.value}</p>
               </div>
             );
           })}
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <div className="flex gap-1 bg-glass2 p-1 rounded-lg w-fit border border-edge">
           <button
             onClick={() => { setActiveTab('drivers'); setSortField('total_stops'); }}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'drivers' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'drivers' ? 'bg-signal text-[#1a1205]' : 'text-faint hover:text-mist'
             }`}
           >
             Driver Reports
@@ -420,7 +420,7 @@ export function Reports() {
           <button
             onClick={() => { setActiveTab('stops'); setSortField('visit_count'); }}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'stops' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'stops' ? 'bg-signal text-[#1a1205]' : 'text-faint hover:text-mist'
             }`}
           >
             Stop Profitability
@@ -428,61 +428,61 @@ export function Reports() {
           <button
             onClick={() => { setActiveTab('hnis'); setSortField('log_date'); }}
             className={`flex items-center gap-1.5 px-5 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'hnis' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              activeTab === 'hnis' ? 'bg-signal text-[#1a1205]' : 'text-faint hover:text-mist'
             }`}
           >
             <Package className="w-3.5 h-3.5" />
             HNIS Loads
             {hnisLoads.length > 0 && (
-              <span className="ml-1 text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{hnisLoads.length}</span>
+              <span className="ml-1 text-xs font-semibold bg-signal-dim text-signal px-1.5 py-0.5 rounded-full">{hnisLoads.length}</span>
             )}
           </button>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="card overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-2 border-edge border-t-signal rounded-full animate-spin"></div>
             </div>
           ) : activeTab === 'hnis' ? (
             <>
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                <Package className="w-5 h-5 text-amber-500" />
-                <h2 className="font-semibold text-gray-800">HNIS Load Logs</h2>
-                <span className="ml-auto text-xs text-gray-400">{hnisLoads.length} load{hnisLoads.length !== 1 ? 's' : ''}</span>
+              <div className="px-6 py-4 border-b border-edge flex items-center gap-2">
+                <Package className="w-5 h-5 text-signal" />
+                <h2 className="font-semibold text-mist">HNIS Load Logs</h2>
+                <span className="ml-auto text-xs text-faint">{hnisLoads.length} load{hnisLoads.length !== 1 ? 's' : ''}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
+                    <tr className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
                       {[
                         'Driver', 'Load #', 'Date', 'Supplier', 'Supplier Address',
                         'Depart → Supplier', 'Arrive at Supplier', 'Depart from Supplier', 'Arrive at Plant', 'Tolls',
                       ].map(col => (
-                        <th key={col} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-left whitespace-nowrap">
+                        <th key={col} className="px-4 py-3 text-xs font-semibold text-faint uppercase tracking-wide text-left whitespace-nowrap">
                           {col}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-edge">
                     {hnisLoads.length === 0 ? (
-                      <tr><td colSpan={10} className="px-6 py-12 text-center text-gray-400">No HNIS loads for this period</td></tr>
+                      <tr><td colSpan={10} className="px-6 py-12 text-center text-faint">No HNIS loads for this period</td></tr>
                     ) : hnisLoads.map((h, i) => (
-                      <tr key={h.id} className={`hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                        <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{h.driver_name}</td>
-                        <td className="px-4 py-3 text-gray-700 font-mono">{h.load_number || '—'}</td>
-                        <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                      <tr key={h.id} className={`hover:bg-glass2 transition-colors ${i % 2 === 0 ? '' : 'bg-glass2'}`}>
+                        <td className="px-4 py-3 font-medium text-mist whitespace-nowrap">{h.driver_name}</td>
+                        <td className="px-4 py-3 text-dim font-mono">{h.load_number || '—'}</td>
+                        <td className="px-4 py-3 text-dim whitespace-nowrap">
                           {new Date(h.log_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
-                        <td className="px-4 py-3 text-gray-900 font-medium">{h.supplier_name || '—'}</td>
-                        <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate" title={h.supplier_address}>{h.supplier_address || '—'}</td>
-                        <td className="px-4 py-3 text-gray-700 font-mono">{h.departure_time_to_supplier ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-700 font-mono">{h.arrival_time_to_supplier ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-700 font-mono">{h.departure_time_from_supplier ?? '—'}</td>
-                        <td className="px-4 py-3 text-gray-700 font-mono">{h.arrival_time_to_plant ?? '—'}</td>
-                        <td className="px-4 py-3 text-rose-600 font-medium">
+                        <td className="px-4 py-3 text-mist font-medium">{h.supplier_name || '—'}</td>
+                        <td className="px-4 py-3 text-dim max-w-[160px] truncate" title={h.supplier_address}>{h.supplier_address || '—'}</td>
+                        <td className="px-4 py-3 text-dim font-mono">{h.departure_time_to_supplier ?? '—'}</td>
+                        <td className="px-4 py-3 text-dim font-mono">{h.arrival_time_to_supplier ?? '—'}</td>
+                        <td className="px-4 py-3 text-dim font-mono">{h.departure_time_from_supplier ?? '—'}</td>
+                        <td className="px-4 py-3 text-dim font-mono">{h.arrival_time_to_plant ?? '—'}</td>
+                        <td className="px-4 py-3 text-bad font-medium">
                           {h.tolls_accrued != null && Number(h.tolls_accrued) > 0 ? `$${Number(h.tolls_accrued).toFixed(2)}` : '—'}
                         </td>
                       </tr>
@@ -493,15 +493,15 @@ export function Reports() {
             </>
           ) : activeTab === 'drivers' ? (
             <>
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                <BarChart2 className="w-5 h-5 text-gray-400" />
-                <h2 className="font-semibold text-gray-800">Driver Performance</h2>
-                <span className="ml-auto text-xs text-gray-400">{sortedDrivers().length} drivers</span>
+              <div className="px-6 py-4 border-b border-edge flex items-center gap-2">
+                <BarChart2 className="w-5 h-5 text-faint" />
+                <h2 className="font-semibold text-mist">Driver Performance</h2>
+                <span className="ml-auto text-xs text-faint">{sortedDrivers().length} drivers</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
+                    <tr className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
                       {[
                         { label: 'Driver', field: 'driver_name', align: 'left' },
                         { label: 'Total Stops', field: 'total_stops', align: 'right' },
@@ -514,30 +514,30 @@ export function Reports() {
                         <th
                           key={col.field}
                           onClick={() => toggleSort(col.field)}
-                          className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none text-${col.align}`}
+                          className={`px-6 py-3 text-xs font-semibold text-faint uppercase tracking-wide cursor-pointer hover:text-mist select-none text-${col.align}`}
                         >
                           {col.label}<SortIcon field={col.field} />
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-edge">
                     {sortedDrivers().length === 0 ? (
-                      <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400">No data for this period</td></tr>
+                      <tr><td colSpan={7} className="px-6 py-12 text-center text-faint">No data for this period</td></tr>
                     ) : sortedDrivers().map((d, i) => (
-                      <tr key={d.driver_name} className={`hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                      <tr key={d.driver_name} className={`hover:bg-glass2 transition-colors ${i % 2 === 0 ? '' : 'bg-glass2'}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">{d.driver_name}</span>
-                            <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{d.total_stops}</span>
+                            <span className="font-medium text-mist">{d.driver_name}</span>
+                            <span className="text-xs font-semibold bg-glass2 text-dim px-2 py-0.5 rounded-full">{d.total_stops}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right text-gray-700">{d.total_stops}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{fmt(d.avg_stop_duration_min)}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{fmt(d.avg_travel_time_min)}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{d.total_hours > 0 ? d.total_hours.toFixed(1) + 'h' : '—'}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{d.total_fuel > 0 ? '$' + d.total_fuel.toFixed(2) : '—'}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{d.total_tolls > 0 ? '$' + d.total_tolls.toFixed(2) : '—'}</td>
+                        <td className="px-6 py-4 text-right text-dim">{d.total_stops}</td>
+                        <td className="px-6 py-4 text-right text-dim">{fmt(d.avg_stop_duration_min)}</td>
+                        <td className="px-6 py-4 text-right text-dim">{fmt(d.avg_travel_time_min)}</td>
+                        <td className="px-6 py-4 text-right text-dim">{d.total_hours > 0 ? d.total_hours.toFixed(1) + 'h' : '—'}</td>
+                        <td className="px-6 py-4 text-right text-dim">{d.total_fuel > 0 ? '$' + d.total_fuel.toFixed(2) : '—'}</td>
+                        <td className="px-6 py-4 text-right text-dim">{d.total_tolls > 0 ? '$' + d.total_tolls.toFixed(2) : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -546,19 +546,19 @@ export function Reports() {
             </>
           ) : (
             <>
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-gray-400" />
-                <h2 className="font-semibold text-gray-800">Stop Profitability</h2>
-                <span className="ml-auto text-xs text-gray-400">{sortedStops().length} stops</span>
+              <div className="px-6 py-4 border-b border-edge flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-faint" />
+                <h2 className="font-semibold text-mist">Stop Profitability</h2>
+                <span className="ml-auto text-xs text-faint">{sortedStops().length} stops</span>
               </div>
-              <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-1.5">
+              <div className="px-6 py-3 bg-signal-dim border-b border-edge text-xs text-signal flex items-center gap-1.5">
                 <DollarSign className="w-3.5 h-3.5" />
                 Estimated revenue uses a $45/hr rate based on average dwell time per visit, minus toll costs.
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
+                    <tr className="bg-[rgba(23,26,32,0.94)] backdrop-blur border-b border-edge">
                       {[
                         { label: 'Stop / Vendor', field: 'vendor_name', align: 'left' },
                         { label: 'Total Visits', field: 'visit_count', align: 'right' },
@@ -569,24 +569,24 @@ export function Reports() {
                         <th
                           key={col.field}
                           onClick={() => toggleSort(col.field)}
-                          className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none text-${col.align}`}
+                          className={`px-6 py-3 text-xs font-semibold text-faint uppercase tracking-wide cursor-pointer hover:text-mist select-none text-${col.align}`}
                         >
                           {col.label}<SortIcon field={col.field} />
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-edge">
                     {sortedStops().length === 0 ? (
-                      <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-400">No data for this period</td></tr>
+                      <tr><td colSpan={5} className="px-6 py-12 text-center text-faint">No data for this period</td></tr>
                     ) : sortedStops().map((s, i) => (
-                      <tr key={s.vendor_name} className={`hover:bg-gray-50 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{s.vendor_name}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{s.visit_count}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{fmt(s.avg_dwell_min)}</td>
-                        <td className="px-6 py-4 text-right text-gray-700">{s.toll_amount > 0 ? '$' + s.toll_amount.toFixed(2) : '—'}</td>
+                      <tr key={s.vendor_name} className={`hover:bg-glass2 transition-colors ${i % 2 === 0 ? '' : 'bg-glass2'}`}>
+                        <td className="px-6 py-4 font-medium text-mist whitespace-nowrap">{s.vendor_name}</td>
+                        <td className="px-6 py-4 text-right text-dim">{s.visit_count}</td>
+                        <td className="px-6 py-4 text-right text-dim">{fmt(s.avg_dwell_min)}</td>
+                        <td className="px-6 py-4 text-right text-dim">{s.toll_amount > 0 ? '$' + s.toll_amount.toFixed(2) : '—'}</td>
                         <td className="px-6 py-4 text-right">
-                          <span className={`font-semibold ${s.estimated_revenue >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          <span className={`font-semibold ${s.estimated_revenue >= 0 ? 'text-ok' : 'text-bad'}`}>
                             ${s.estimated_revenue.toFixed(2)}
                           </span>
                         </td>
@@ -600,7 +600,7 @@ export function Reports() {
         </div>
 
         {/* Legend note */}
-        <div className="flex flex-wrap gap-6 text-xs text-gray-400 pb-4">
+        <div className="flex flex-wrap gap-6 text-xs text-faint pb-4">
           <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Avg stop time = time between arrival and departure at each stop</span>
           <span className="flex items-center gap-1.5"><ChevronDown className="w-3.5 h-3.5 rotate-90" /> Avg travel time = time between departing one stop and arriving at next</span>
         </div>
