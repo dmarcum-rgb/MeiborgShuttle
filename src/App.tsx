@@ -10,6 +10,7 @@ import { Stops } from './components/Stops';
 import { FuelReceipts } from './components/FuelReceipts';
 import { TollReceipts } from './components/TollReceipts';
 import { GeodisPreBilling } from './components/GeodisPreBilling';
+import { TollSheets } from './components/TollSheets';
 import { GeodisView } from './components/GeodisView';
 import { Timesheets } from './components/Timesheets';
 import { Reports } from './components/Reports';
@@ -65,6 +66,8 @@ function AppContent() {
         return <FuelReceipts />;
       case 'tolls':
         return <TollReceipts />;
+      case 'toll-sheets':
+        return <TollSheets />;
       case 'hours':
         return <GeodisPreBilling />;
       case 'timesheets':

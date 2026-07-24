@@ -14,6 +14,21 @@ type StopDetail = {
   delay: string;
 };
 
+type MasterTollTxn = {
+  truck_id: string;
+  post_date: string | null;
+  source: string;
+  read_type: string;
+  device_id: string;
+  agency: string;
+  entry_plaza: string;
+  exit_plaza: string;
+  exit_date: string | null;
+  exit_time: string;
+  toll_class: string;
+  amount: number;
+};
+
 type DayDetail = {
   date: string;
   start: string | null;
@@ -34,7 +49,10 @@ type DriverRow = {
   dailyHours: (number | null)[];
   totalHours: number;
   fuel: number;
-  tolls: number;
+  tolls: number;          // billed toll amount (actual master when available, else self-reported)
+  tollsReported: number;  // sum of driver self-reported toll_total
+  tollsActual: number;    // sum of master-sheet tolls attributed to this driver
+  tollTxns: MasterTollTxn[];
   startTimes: (string | null)[];
   endTimes: (string | null)[];
   fuelReceiptUrls: string[];
@@ -51,6 +69,9 @@ type WeekData = {
   totalTolls: number;
   subtotal: number;
   grandTotal: number;
+  hasMasterTolls: boolean;       // a toll sheet covers this week
+  unmatchedTollTotal: number;    // master tolls on trucks not tied to a shuttle driver (excluded from bill)
+  unmatchedTruckIds: string[];
 };
 
 function getSundayWeekStart(d: Date): Date {
@@ -96,6 +117,9 @@ function blankRow(name: string): DriverRow {
     totalHours: 0,
     fuel: 0,
     tolls: 0,
+    tollsReported: 0,
+    tollsActual: 0,
+    tollTxns: [],
     fuelReceiptUrls: [],
     tollReceiptUrls: [],
     days: [null, null, null, null, null, null, null],
@@ -240,7 +264,7 @@ export function GeodisPreBilling() {
       row.dailyHours[dayIdx] = (row.dailyHours[dayIdx] ?? 0) + Number(ts.total_hours);
       row.totalHours += Number(ts.total_hours);
       row.fuel += Number(ts.fuel_dollars ?? 0);
-      row.tolls += Number(ts.toll_total ?? 0);
+      row.tollsReported += Number(ts.toll_total ?? 0);
       row.startTimes[dayIdx] = ts.start_time;
       row.endTimes[dayIdx] = ts.end_time;
 
@@ -277,13 +301,90 @@ export function GeodisPreBilling() {
       };
     }
 
+    // ── Master toll sheet (authoritative) ──────────────────────────────────────
+    // If an uploaded toll sheet covers this week, the billed tolls come from it,
+    // attributed to a driver by Truck ID + Exit Date. The sheet is for ALL Meiborg
+    // trucks, so tolls on trucks not tied to a shuttle driver this week are excluded.
+    const [{ data: masterTollRows }, { data: driverRows }] = await Promise.all([
+      supabase
+        .from('master_tolls')
+        .select('truck_id, post_date, source, read_type, device_id, agency, entry_plaza, exit_plaza, exit_date, exit_time, toll_class, amount')
+        .gte('exit_date', startStr)
+        .lte('exit_date', endStr),
+      supabase.from('drivers').select('name, truck_number'),
+    ]);
+
+    const hasMasterTolls = (masterTollRows?.length ?? 0) > 0;
+
+    // Attribution maps
+    const perDayTruckToName = new Map<string, string>(); // `${truck}|${work_date}` -> driver_name
+    for (const ts of data ?? []) {
+      const truck = String(ts.vehicle_number ?? '').trim();
+      if (truck) perDayTruckToName.set(`${truck}|${ts.work_date}`, ts.driver_name || 'Unknown Driver');
+    }
+    const truckToName = new Map<string, string>(); // fallback: truck_number -> driver name
+    for (const dr of driverRows ?? []) {
+      const truck = String(dr.truck_number ?? '').trim();
+      if (truck && dr.name) truckToName.set(truck, dr.name);
+    }
+
+    let unmatchedTollTotal = 0;
+    const unmatchedTrucks = new Set<string>();
+    for (const t of masterTollRows ?? []) {
+      const truck = String(t.truck_id ?? '').trim();
+      const amount = Number(t.amount ?? 0);
+      const name =
+        perDayTruckToName.get(`${truck}|${t.exit_date}`) ??
+        truckToName.get(truck);
+      if (!name || !map.has(name)) {
+        unmatchedTollTotal += amount;
+        if (truck) unmatchedTrucks.add(truck);
+        continue;
+      }
+      const row = map.get(name)!;
+      row.tollsActual += amount;
+      row.tollTxns.push({
+        truck_id: truck,
+        post_date: t.post_date ?? null,
+        source: t.source ?? '',
+        read_type: t.read_type ?? '',
+        device_id: t.device_id ?? '',
+        agency: t.agency ?? '',
+        entry_plaza: t.entry_plaza ?? '',
+        exit_plaza: t.exit_plaza ?? '',
+        exit_date: t.exit_date ?? null,
+        exit_time: t.exit_time ?? '',
+        toll_class: t.toll_class ?? '',
+        amount,
+      });
+    }
+
+    // Billed toll = master actual when a sheet exists, otherwise self-reported.
+    for (const row of map.values()) {
+      row.tollTxns.sort((a, b) =>
+        (a.exit_date ?? '').localeCompare(b.exit_date ?? '') || a.exit_time.localeCompare(b.exit_time)
+      );
+      row.tolls = hasMasterTolls ? row.tollsActual : row.tollsReported;
+    }
+
     const drivers = Array.from(map.values()).sort((a, b) => a.driver_name.localeCompare(b.driver_name));
     const totalFuel = drivers.reduce((s, d) => s + d.fuel, 0);
     const totalTolls = drivers.reduce((s, d) => s + d.tolls, 0);
     const subtotal = drivers.reduce((s, d) => s + d.totalHours * HOURLY_RATE, 0);
     const grandTotal = subtotal + totalFuel + totalTolls;
 
-    setWeekData({ weekStart: sun, weekEnd: sat, drivers, totalFuel, totalTolls, subtotal, grandTotal });
+    setWeekData({
+      weekStart: sun,
+      weekEnd: sat,
+      drivers,
+      totalFuel,
+      totalTolls,
+      subtotal,
+      grandTotal,
+      hasMasterTolls,
+      unmatchedTollTotal,
+      unmatchedTruckIds: Array.from(unmatchedTrucks).sort(),
+    });
     setLoading(false);
   };
 
@@ -599,6 +700,96 @@ export function GeodisPreBilling() {
     }
     XLSX.utils.book_append_sheet(wb, wsStops, 'Stops Detail');
 
+    // ── Toll Detail sheet — line-item proof from the uploaded master toll sheet ──
+    // Grouped by driver, laid out like the toll-provider workbook, so Geodis can
+    // reconcile every billed toll to a transaction (truck, plaza, exit date/time).
+    const driversWithTolls = weekData.drivers.filter(d => d.tollTxns.length > 0);
+    if (driversWithTolls.length > 0) {
+      const TCOLS = 12;
+      const wsT: Record<string, unknown> = {};
+      const tMerges: object[] = [];
+      let tr = 1; // 1-indexed
+
+      const put = (r: number, c: number, cellObj: object) => {
+        wsT[XLSX.utils.encode_cell({ r: r - 1, c })] = cellObj;
+      };
+      const fmtDateCell = (s: string | null) =>
+        s ? new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }) : '';
+
+      // Title
+      put(tr, 0, {
+        v: 'GEODIS TOLL DETAIL', t: 's',
+        s: { fill: { fgColor: { rgb: '1F2937' } }, font: { bold: true, color: { rgb: 'F59E0B' }, sz: 14 }, alignment: { horizontal: 'center', vertical: 'center' }, border: thickBorder },
+      });
+      tMerges.push({ s: { r: tr - 1, c: 0 }, e: { r: tr - 1, c: TCOLS - 1 } });
+      tr++;
+      // Subtitle
+      put(tr, 0, {
+        v: `Week Ending: ${fmt(weekData.weekEnd)}   |   Source: uploaded toll-provider master sheet   |   Amounts matched to driver by truck & exit date`,
+        t: 's', s: subHeaderStyle,
+      });
+      tMerges.push({ s: { r: tr - 1, c: 0 }, e: { r: tr - 1, c: TCOLS - 1 } });
+      tr += 2;
+
+      const tHeaders = ['Post Date', 'Source', 'Read Type', 'Device / Plate', 'Truck #', 'Agency', 'Entry Plaza', 'Exit Plaza', 'Exit Date', 'Exit Time', 'Cl', 'Toll $'];
+
+      for (const d of driversWithTolls) {
+        // Driver group header
+        put(tr, 0, {
+          v: `${d.driver_name}${d.vehicle_number ? `  ·  Truck #${d.vehicle_number}` : ''}  —  ${d.tollTxns.length} transaction${d.tollTxns.length === 1 ? '' : 's'}`,
+          t: 's', s: subHeaderStyle,
+        });
+        tMerges.push({ s: { r: tr - 1, c: 0 }, e: { r: tr - 1, c: TCOLS - 1 } });
+        tr++;
+        // Column headers
+        tHeaders.forEach((h, c) => put(tr, c, { v: h, t: 's', s: colHeaderStyle }));
+        tr++;
+        // Transaction rows
+        d.tollTxns.forEach((t, i) => {
+          const even = i % 2 === 0;
+          const base = dataRowStyles(even);
+          const left = dataRowLeftStyle(even);
+          const vals: { v: string | number; t: 's' | 'n'; s: object }[] = [
+            { v: fmtDateCell(t.post_date), t: 's', s: base },
+            { v: t.source.trim(), t: 's', s: left },
+            { v: t.read_type.trim(), t: 's', s: left },
+            { v: t.device_id, t: 's', s: left },
+            { v: t.truck_id, t: 's', s: base },
+            { v: t.agency.trim(), t: 's', s: base },
+            { v: t.entry_plaza, t: 's', s: left },
+            { v: t.exit_plaza, t: 's', s: left },
+            { v: fmtDateCell(t.exit_date), t: 's', s: base },
+            { v: t.exit_time, t: 's', s: base },
+            { v: t.toll_class, t: 's', s: base },
+            { v: t.amount, t: 'n', s: { ...moneyStyle(even), numFmt: '$#,##0.00' } },
+          ];
+          vals.forEach((cellObj, c) => put(tr, c, cellObj));
+          tr++;
+        });
+        // Subtotal
+        put(tr, 0, { v: `${d.driver_name} total`, t: 's', s: { ...totalsStyle, alignment: { horizontal: 'left' } } });
+        for (let c = 1; c < TCOLS - 1; c++) put(tr, c, { v: '', t: 's', s: totalsStyle });
+        tMerges.push({ s: { r: tr - 1, c: 0 }, e: { r: tr - 1, c: TCOLS - 2 } });
+        put(tr, TCOLS - 1, { v: d.tollsActual, t: 'n', s: { ...totalsStyle, numFmt: '$#,##0.00' } });
+        tr += 2; // subtotal + spacer
+      }
+
+      // Grand total
+      const billedTollTotal = driversWithTolls.reduce((s, d) => s + d.tollsActual, 0);
+      put(tr, 0, { v: 'TOTAL BILLED TOLLS', t: 's', s: { ...grandTotalLabelStyle, alignment: { horizontal: 'left' } } });
+      for (let c = 1; c < TCOLS - 1; c++) put(tr, c, { v: '', t: 's', s: grandTotalLabelStyle });
+      tMerges.push({ s: { r: tr - 1, c: 0 }, e: { r: tr - 1, c: TCOLS - 2 } });
+      put(tr, TCOLS - 1, { v: billedTollTotal, t: 'n', s: grandTotalValueStyle });
+
+      wsT['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: tr - 1, c: TCOLS - 1 } });
+      wsT['!merges'] = tMerges;
+      wsT['!cols'] = [
+        { wch: 11 }, { wch: 11 }, { wch: 13 }, { wch: 16 }, { wch: 8 }, { wch: 9 },
+        { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 10 }, { wch: 5 }, { wch: 12 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsT, 'Toll Detail');
+    }
+
     const weekStr = weekData.weekStart.toISOString().split('T')[0];
     XLSX.writeFile(wb, `Geodis_Billing_${weekStr}.xlsx`);
   };
@@ -633,6 +824,33 @@ export function GeodisPreBilling() {
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Toll source indicator */}
+      {weekData && (
+        weekData.hasMasterTolls ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-ok/40 bg-ok/10 text-ok px-3 py-1">
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Tolls billed from uploaded master sheet
+            </span>
+            {weekData.unmatchedTruckIds.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-glass2 text-faint px-3 py-1"
+                title={`Trucks on the toll sheet not tied to a shuttle driver this week (excluded from Geodis billing): ${weekData.unmatchedTruckIds.join(', ')}`}
+              >
+                {weekData.unmatchedTruckIds.length} truck{weekData.unmatchedTruckIds.length === 1 ? '' : 's'} excluded · ${weekData.unmatchedTollTotal.toFixed(2)}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="text-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-glass2 text-faint px-3 py-1">
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              No toll sheet uploaded for this week — tolls are driver self-reported
+            </span>
+          </div>
+        )
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -717,8 +935,16 @@ export function GeodisPreBilling() {
                       </td>
                       <td className="px-3 py-3 text-right text-xs whitespace-nowrap">
                         {driver.tolls > 0
-                          ? <span className="text-dim">($${driver.tolls.toFixed(2)})</span>
+                          ? <span className="text-dim">{`($${driver.tolls.toFixed(2)})`}</span>
                           : <span className="text-faint">($ —)</span>}
+                        {weekData.hasMasterTolls && Math.abs(driver.tollsActual - driver.tollsReported) > 0.01 && (
+                          <span
+                            className="ml-1 inline-flex items-center text-[10px] text-signal"
+                            title={`Driver self-reported $${driver.tollsReported.toFixed(2)} · master sheet $${driver.tollsActual.toFixed(2)}`}
+                          >
+                            ≠
+                          </span>
+                        )}
                       </td>
                       {driver.dailyHours.map((h, di) => (
                         <td key={di} className="px-2 py-3 text-center align-top">
@@ -800,6 +1026,39 @@ export function GeodisPreBilling() {
                               );
                             })}
                           </div>
+                          {driver.tollTxns.length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-xs uppercase tracking-widest text-faint mb-2">
+                                Toll transactions (master sheet) · {driver.tollTxns.length} · ${driver.tollsActual.toFixed(2)}
+                              </p>
+                              <div className="rounded-xl border border-edge overflow-hidden">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="bg-glass2 text-faint">
+                                      <th className="text-left px-3 py-2 font-medium">Exit Date</th>
+                                      <th className="text-left px-3 py-2 font-medium">Time</th>
+                                      <th className="text-left px-3 py-2 font-medium">Truck</th>
+                                      <th className="text-left px-3 py-2 font-medium">Agency</th>
+                                      <th className="text-left px-3 py-2 font-medium">Plaza</th>
+                                      <th className="text-right px-3 py-2 font-medium">Toll</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-edge">
+                                    {driver.tollTxns.map((t, ti) => (
+                                      <tr key={ti} className="text-dim">
+                                        <td className="px-3 py-1.5 whitespace-nowrap">{t.exit_date ? new Date(t.exit_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }) : '—'}</td>
+                                        <td className="px-3 py-1.5 whitespace-nowrap text-faint">{t.exit_time || '—'}</td>
+                                        <td className="px-3 py-1.5 whitespace-nowrap">#{t.truck_id}</td>
+                                        <td className="px-3 py-1.5 whitespace-nowrap text-faint">{t.agency.trim() || '—'}</td>
+                                        <td className="px-3 py-1.5 text-faint">{(t.exit_plaza || t.entry_plaza || '—').toString().trim()}</td>
+                                        <td className="px-3 py-1.5 text-right text-mist whitespace-nowrap">${t.amount.toFixed(2)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )}
